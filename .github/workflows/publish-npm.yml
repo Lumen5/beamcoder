@@ -4,12 +4,17 @@
 name: Node.js Package
 
 on:
+  push:
+    branches: [ "add-ci" ]
   release:
     types: [created]
 
 jobs:
   publish-npm:
     runs-on: ubuntu-latest
+    env:
+      CPATH: /tmp/framefusion/.ffmpeg/ffmpeg/include/
+      PKG_CONFIG_PATH: /tmp/framefusion/.ffmpeg/ffmpeg/lib/pkgconfig/
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -18,6 +23,8 @@ jobs:
           registry-url: https://registry.npmjs.org/
       - run: mkdir /tmp/beamcoder
       - run: cp -r . /tmp/beamcoder
+      - run: cp -r . /tmp/framefusion
+      - run: sudo ./scripts/install_beamcoder_dependencies.sh
       - run: yarn install --frozen-lockfile
         working-directory: /tmp/beamcoder
       - run: yarn publish
