@@ -10,6 +10,9 @@ on:
 jobs:
   publish-npm:
     runs-on: ubuntu-latest
+    env:
+      CPATH: /tmp/beamcoder/.ffmpeg/ffmpeg/include/
+      PKG_CONFIG_PATH: /tmp/beamcoder/.ffmpeg/ffmpeg/lib/pkgconfig/
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -18,6 +21,8 @@ jobs:
           registry-url: https://registry.npmjs.org/
       - run: mkdir /tmp/beamcoder
       - run: cp -r . /tmp/beamcoder
+      - run: sudo ./scripts/install_beamcoder_dependencies.sh
+        working-directory: /tmp/beamcoder
       - run: yarn install --frozen-lockfile
         working-directory: /tmp/beamcoder
       - run: yarn publish
