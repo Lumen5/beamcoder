@@ -4,8 +4,6 @@
 name: Node.js Package
 
 on:
-  push:
-    branches: [ "add-ci" ]
   release:
     types: [created]
 
