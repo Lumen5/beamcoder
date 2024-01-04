@@ -18,7 +18,6 @@ jobs:
           registry-url: https://registry.npmjs.org/
       - run: mkdir /tmp/beamcoder
       - run: cp -r . /tmp/beamcoder
-        working-directory: /tmp/beamcoder
       - run: yarn install --frozen-lockfile
         working-directory: /tmp/beamcoder
       - run: yarn publish
