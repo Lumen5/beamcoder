@@ -13,8 +13,8 @@ jobs:
   publish-npm:
     runs-on: ubuntu-latest
     env:
-      CPATH: /tmp/framefusion/.ffmpeg/ffmpeg/include/
-      PKG_CONFIG_PATH: /tmp/framefusion/.ffmpeg/ffmpeg/lib/pkgconfig/
+      CPATH: /tmp/beamcoder/.ffmpeg/ffmpeg/include/
+      PKG_CONFIG_PATH: /tmp/beamcoder/.ffmpeg/ffmpeg/lib/pkgconfig/
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
