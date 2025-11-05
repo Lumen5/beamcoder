@@ -1,0 +1,33 @@
+FROM node:22-slim
+
+# Install required packages for node-gyp
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    git \
+    libz-dev \
+    libpostproc-dev libswresample-dev libswscale-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Copy all source files
+COPY . .
+
+# Install and build
+RUN npm run preinstall
+# COPY ./ffmpeg-static-lib/libavformat.a ./ffmpeg/ffmpeg-static-build/lib/libavformat.a
+# COPY ./ffmpeg-static-lib/libavutil.a ./ffmpeg/ffmpeg-static-build/lib/libavutil.a
+# COPY ./ffmpeg-static-lib/libswresample.a ./ffmpeg/ffmpeg-static-build/lib/libswresample.a
+# COPY ./ffmpeg-static-lib/libswscale.a ./ffmpeg/ffmpeg-static-build/lib/libswscale.a
+# COPY ./ffmpeg-static-lib/libavcodec.a ./ffmpeg/ffmpeg-static-build/lib/libavcodec.a
+# COPY ./ffmpeg-static-lib/libavdevice.a ./ffmpeg/ffmpeg-static-build/lib/libavdevice.a
+# COPY ./ffmpeg-static-lib/libavfilter.a ./ffmpeg/ffmpeg-static-build/lib/libavfilter.a
+# COPY ./ffmpeg-static-lib/libpostproc.a ./ffmpeg/ffmpeg-static-build/lib/libpostproc.a
+RUN npm install
+RUN ls -lh build/Release/beamcoder.node
+CMD ["node", "-e", "console.log('Build successful')"]

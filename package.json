@@ -1,12 +1,15 @@
 {
   "name": "@lumen5/beamcoder",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Node.js native bindings to FFmpeg.",
   "main": "index.js",
   "types": "index.d.ts",
   "scripts": {
-    "preinstall": "node install_ffmpeg.js",
-    "install": "node-gyp rebuild",
+    "preinstall": "node install_ffmpeg_static.js",
+    "install": "FFMPEG_STATIC=1 node-gyp rebuild",
+    "preinstall:dynamic": "node install_ffmpeg.js",
+    "install:dynamic": "FFMPEG_STATIC=0 node-gyp rebuild",
+    "build:dynamic": "npm run preinstall:dynamic && npm run install:dynamic",
     "test": "tape test/*.js",
     "lint": "eslint **/*.js",
     "lint-html": "eslint **/*.js -f html -o ./reports/lint-results.html",
