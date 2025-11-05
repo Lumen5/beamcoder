@@ -35,6 +35,30 @@ const FFMPEG_VERSION = '5.1.4';
 const GITHUB_REPO = 'Lumen5/ffmpeg-static';
 const GITHUB_BRANCH = 'main';
 
+// Get platform string for static library directory
+// Maps to the directory structure in ffmpeg-static: output/linux/{amd64,arm64}
+function getPlatform() {
+  const platform = os.platform();
+  const arch = os.arch();
+
+  // Map Node.js arch to platform format
+  // Note: macOS arm64 uses linux/arm64 binaries
+  if (arch === 'x64') {
+    if (platform !== 'linux') {
+      throw new Error(`Platform ${platform} with x64 architecture is not supported for static linking. Only Linux x64 is supported.`);
+    }
+    return 'linux/amd64';
+  } else if (arch === 'arm64') {
+    // Both Linux and macOS arm64 use linux/arm64 static libraries
+    if (platform !== 'linux' && platform !== 'darwin') {
+      throw new Error(`Platform ${platform} with arm64 architecture is not supported for static linking.`);
+    }
+    return 'linux/arm64';
+  } else {
+    throw new Error(`Architecture ${arch} is not supported. Only x64 (amd64) and arm64 are supported.`);
+  }
+}
+
 // Get the download URL for the repository archive
 function getDownloadUrl() {
   return `https://github.com/${GITHUB_REPO}/archive/refs/heads/${GITHUB_BRANCH}.tar.gz`;
@@ -114,12 +138,13 @@ async function downloadFFmpegStatic() {
     'libavfilter.a',
     'libavformat.a',
     'libavutil.a',
+    'libpostproc.a',
     'libswresample.a',
     'libswscale.a'
   ];
 
-  // libpostproc.a is optional - check if it exists but don't fail if missing
-  const optionalLibs = ['libpostproc.a'];
+  // No optional libraries
+  const optionalLibs = [];
 
   try {
     // Check all libraries exist
@@ -154,14 +179,18 @@ async function downloadFFmpegStatic() {
   console.log('Extracting FFmpeg static libraries...');
   await extractTarGz(tarPath, ffmpegDir);
 
+  // Get the platform-specific directory
+  const platformDir = getPlatform();
+  console.log(`Using platform: ${platformDir}`);
+
   // Copy output directory contents to ffmpeg-static-build
-  // The repo has structure: ffmpeg-static-main/output/{lib,include}
+  // The repo has structure: ffmpeg-static-main/output/linux/{amd64,arm64}/{lib,include}
   // We need: ffmpeg-static-build/{lib,include}
   console.log('Setting up library directories...');
 
-  const outputDir = path.join(extractDir, 'output');
+  const outputDir = path.join(extractDir, 'output', platformDir);
   if (!fs.existsSync(outputDir)) {
-    throw new Error(`Expected directory not found: ${outputDir}`);
+    throw new Error(`Expected directory not found: ${outputDir}. Platform ${platformDir} may not be available in the repository.`);
   }
 
   // Create build directory
@@ -170,7 +199,7 @@ async function downloadFFmpegStatic() {
     else throw e;
   });
 
-  // Copy contents of output directory (lib and include) to ffmpeg-static-build
+  // Copy contents of platform-specific output directory (lib and include) to ffmpeg-static-build
   await exec(`cp -r "${outputDir}"/* "${buildDir}"/`);
 
   // Verify all required libraries were copied
@@ -215,12 +244,14 @@ async function win32() {
 }
 
 async function linux() {
-  console.log('Installing FFmpeg static libraries for Linux.');
+  const platformDir = getPlatform();
+  console.log(`Installing FFmpeg static libraries for Linux (${platformDir}).`);
   await downloadFFmpegStatic();
 }
 
 async function darwin() {
-  console.log('Installing FFmpeg static libraries for macOS.');
+  const platformDir = getPlatform();
+  console.log(`Installing FFmpeg static libraries for macOS (using ${platformDir}).`);
   await downloadFFmpegStatic();
 }
 
