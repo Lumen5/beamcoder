@@ -36,7 +36,7 @@ const GITHUB_REPO = 'Lumen5/ffmpeg-static';
 const GITHUB_BRANCH = 'main';
 
 // Get platform string for static library directory
-// Maps to the directory structure in ffmpeg-static: output/linux/{amd64,arm64}
+// Maps to the directory structure in ffmpeg-static: output/linux/{amd64,arm64}, output/darwin/arm64
 function getPlatform() {
   const platform = os.platform();
   const arch = os.arch();
@@ -49,11 +49,13 @@ function getPlatform() {
     }
     return 'linux/amd64';
   } else if (arch === 'arm64') {
-    // Both Linux and macOS arm64 use linux/arm64 static libraries
-    if (platform !== 'linux' && platform !== 'darwin') {
+    if (platform === 'linux') {
+      return 'linux/arm64';
+    } else if (platform === 'darwin') {
+      return 'darwin/arm64';
+    } else {
       throw new Error(`Platform ${platform} with arm64 architecture is not supported for static linking.`);
     }
-    return 'linux/arm64';
   } else {
     throw new Error(`Architecture ${arch} is not supported. Only x64 (amd64) and arm64 are supported.`);
   }
@@ -184,7 +186,7 @@ async function downloadFFmpegStatic() {
   console.log(`Using platform: ${platformDir}`);
 
   // Copy output directory contents to ffmpeg-static-build
-  // The repo has structure: ffmpeg-static-main/output/linux/{amd64,arm64}/{lib,include}
+  // The repo has structure: ffmpeg-static-main/output/{linux/{amd64,arm64},darwin/arm64}/{lib,include}
   // We need: ffmpeg-static-build/{lib,include}
   console.log('Setting up library directories...');
 
@@ -251,7 +253,7 @@ async function linux() {
 
 async function darwin() {
   const platformDir = getPlatform();
-  console.log(`Installing FFmpeg static libraries for macOS (using ${platformDir}).`);
+  console.log(`Installing FFmpeg static libraries for macOS (${platformDir}).`);
   await downloadFFmpegStatic();
 }
 
