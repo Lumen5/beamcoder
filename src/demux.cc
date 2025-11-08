@@ -54,7 +54,13 @@ void demuxerExecute(napi_env env, void* data) {
 
   if ((ret = avformat_open_input(&c->format, c->filename, c->iformat, &c->options))) {
     c->status = BEAMCODER_ERROR_START;
-    c->errorMsg = avErrorMsg("Problem opening input format: ", ret);
+    char err[1000] = "Problem opening input format. filename: ";
+    strcat(err, c->filename);
+    strcat(err, "iformat: ");
+    strcat(err, c->iformat->name);
+    strcat(err, "format: ");
+    strcat(err, c->format->iformat->name);
+    c->errorMsg = avErrorMsg(err, ret);
     return;
   }
 
