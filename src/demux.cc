@@ -60,6 +60,7 @@ void demuxerExecute(napi_env env, void* data) {
     strcat(err, c->iformat->name);
     strcat(err, "format: ");
     strcat(err, c->format->iformat->name);
+    strcat(err, "\0");
     c->errorMsg = avErrorMsg(err, ret);
     return;
   }
