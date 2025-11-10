@@ -7277,7 +7277,7 @@ void codecContextFinalizer(napi_env env, void* data, void* hint) {
     av_freep(&codecCtx->subtitle_header);
     codecCtx->subtitle_header_size = 0;
   }
-  avcodec_close(codecCtx);
+  // FFmpeg 8: avcodec_close() removed, avcodec_free_context() now handles cleanup
   avcodec_free_context(&codecCtx);
 }
 

@@ -148,7 +148,7 @@ create:
 
 bail:
   if (encoder != nullptr) {
-    avcodec_close(encoder);
+    // FFmpeg 8: avcodec_close() removed, avcodec_free_context() now handles cleanup
     avcodec_free_context(&encoder);
   }
   return nullptr;
@@ -156,7 +156,7 @@ bail:
 
 void encoderFinalizer(napi_env env, void* data, void* hint) {
   AVCodecContext* encoder = (AVCodecContext*) data;
-  avcodec_close(encoder);
+  // FFmpeg 8: avcodec_close() removed, avcodec_free_context() now handles cleanup
   avcodec_free_context(&encoder);
 };
 

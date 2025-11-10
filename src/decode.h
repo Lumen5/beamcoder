@@ -53,7 +53,7 @@ void decoderFinalizer(napi_env env, void* data, void* hint);
   int32_t codecID = -1;
   ~decoderCarrier() {
     if (decoder != nullptr) {
-      avcodec_close(decoder);
+      // FFmpeg 8: avcodec_close() removed, avcodec_free_context() now handles cleanup
       avcodec_free_context(&decoder);
     }
   }
