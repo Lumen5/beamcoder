@@ -620,6 +620,7 @@ done:
   return result;
 }
 
+// FFmpeg 8: coded_picture_number removed - stub for API compatibility
 napi_value getFrameCodedPicNum(napi_env env, napi_callback_info info) {
   napi_status status;
   napi_value result;
@@ -628,7 +629,8 @@ napi_value getFrameCodedPicNum(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**) &f);
   CHECK_STATUS;
 
-  status = napi_create_int32(env, f->frame->coded_picture_number, &result);
+  // Always return 0 as this field was removed in FFmpeg 8
+  status = napi_create_int32(env, 0, &result);
   CHECK_STATUS;
   return result;
 }
@@ -636,7 +638,6 @@ napi_value getFrameCodedPicNum(napi_env env, napi_callback_info info) {
 napi_value setFrameCodedPicNum(napi_env env, napi_callback_info info) {
   napi_status status;
   napi_value result;
-  napi_valuetype type;
   frameData* f;
 
   size_t argc = 1;
@@ -644,22 +645,14 @@ napi_value setFrameCodedPicNum(napi_env env, napi_callback_info info) {
 
   status = napi_get_cb_info(env, info, &argc, args, nullptr, (void**) &f);
   CHECK_STATUS;
-  if (argc < 1) {
-    NAPI_THROW_ERROR("Set frame coded_picture_number must be provided with a value.");
-  }
-  status = napi_typeof(env, args[0], &type);
-  CHECK_STATUS;
-  if (type != napi_number) {
-    NAPI_THROW_ERROR("Frame coded_picture_number property must be set with a number.");
-  }
-  status = napi_get_value_int32(env, args[0], &f->frame->coded_picture_number);
-  CHECK_STATUS;
+  // FFmpeg 8: Do nothing, field was removed
 
   status = napi_get_undefined(env, &result);
   CHECK_STATUS;
   return result;
 }
 
+// FFmpeg 8: display_picture_number removed - stub for API compatibility
 napi_value getFrameDispPicNum(napi_env env, napi_callback_info info) {
   napi_status status;
   napi_value result;
@@ -668,7 +661,8 @@ napi_value getFrameDispPicNum(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**) &f);
   CHECK_STATUS;
 
-  status = napi_create_int32(env, f->frame->display_picture_number, &result);
+  // Always return 0 as this field was removed in FFmpeg 8
+  status = napi_create_int32(env, 0, &result);
   CHECK_STATUS;
   return result;
 }
@@ -676,7 +670,6 @@ napi_value getFrameDispPicNum(napi_env env, napi_callback_info info) {
 napi_value setFrameDispPicNum(napi_env env, napi_callback_info info) {
   napi_status status;
   napi_value result;
-  napi_valuetype type;
   frameData* f;
 
   size_t argc = 1;
@@ -684,16 +677,7 @@ napi_value setFrameDispPicNum(napi_env env, napi_callback_info info) {
 
   status = napi_get_cb_info(env, info, &argc, args, nullptr, (void**) &f);
   CHECK_STATUS;
-  if (argc < 1) {
-    NAPI_THROW_ERROR("Set frame display_picture_number must be provided with a value.");
-  }
-  status = napi_typeof(env, args[0], &type);
-  CHECK_STATUS;
-  if (type != napi_number) {
-    NAPI_THROW_ERROR("Frame display_picture_number property must be set with a number.");
-  }
-  status = napi_get_value_int32(env, args[0], &f->frame->display_picture_number);
-  CHECK_STATUS;
+  // FFmpeg 8: Do nothing, field was removed
 
   status = napi_get_undefined(env, &result);
   CHECK_STATUS;
@@ -1821,7 +1805,8 @@ napi_value getFramePktDuration(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**) &f);
   CHECK_STATUS;
 
-  status = napi_create_int64(env, f->frame->pkt_duration, &result);
+  // FFmpeg 8: Use duration instead of pkt_duration
+  status = napi_create_int64(env, f->frame->duration, &result);
   CHECK_STATUS;
   return result;
 }
@@ -1845,7 +1830,8 @@ napi_value setFramePktDuration(napi_env env, napi_callback_info info) {
   if (type != napi_number) {
     NAPI_THROW_ERROR("Frame pkt_duration property must be set with a number.");
   }
-  status = napi_get_value_int64(env, args[0], &f->frame->pkt_duration);
+  // FFmpeg 8: Use duration instead of pkt_duration
+  status = napi_get_value_int64(env, args[0], &f->frame->duration);
   CHECK_STATUS;
 
   status = napi_get_undefined(env, &result);
@@ -1977,7 +1963,8 @@ napi_value getFrameChannels(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**) &f);
   CHECK_STATUS;
 
-  status = napi_create_int32(env, f->frame->channels, &result);
+  // FFmpeg 8: Use ch_layout.nb_channels instead of channels
+  status = napi_create_int32(env, f->frame->ch_layout.nb_channels, &result);
   CHECK_STATUS;
   return result;
 }
@@ -1987,6 +1974,7 @@ napi_value setFrameChannels(napi_env env, napi_callback_info info) {
   napi_value result;
   napi_valuetype type;
   frameData* f;
+  int32_t channels;
 
   size_t argc = 1;
   napi_value args[1];
@@ -2001,8 +1989,11 @@ napi_value setFrameChannels(napi_env env, napi_callback_info info) {
   if (type != napi_number) {
     NAPI_THROW_ERROR("Frame channels property must be set with a number.");
   }
-  status = napi_get_value_int32(env, args[0], (int32_t*) &f->frame->channels);
+  // FFmpeg 8: Use av_channel_layout_default to set channels via ch_layout
+  status = napi_get_value_int32(env, args[0], &channels);
   CHECK_STATUS;
+  av_channel_layout_uninit(&f->frame->ch_layout);
+  av_channel_layout_default(&f->frame->ch_layout, channels);
 
   status = napi_get_undefined(env, &result);
   CHECK_STATUS;
@@ -2341,18 +2332,15 @@ napi_value makeFrame(napi_env env, napi_callback_info info) {
         }
       }
     }
-    else if (f->frame->nb_samples > 0 && (f->frame->channel_layout || f->frame->channels > 0)) {
+    // FFmpeg 8: Use ch_layout.nb_channels instead of channel_layout/channels
+    else if (f->frame->nb_samples > 0 && f->frame->ch_layout.nb_channels > 0) {
       int channels;
       // int planar = av_sample_fmt_is_planar((AVSampleFormat) f->frame->format);
       // int planes;
       int ret;
 
-      if (f->frame->channels < 2) { // Bump up from default of 1 if necessary
-        f->frame->channels = av_get_channel_layout_nb_channels(f->frame->channel_layout);
-        // printf("Calculated channel number %i\n", f->frame->channels);
-      }
-
-      channels = f->frame->channels;
+      // FFmpeg 8: ch_layout.nb_channels is already set properly, no need to calculate
+      channels = f->frame->ch_layout.nb_channels;
       // planes = planar ? channels : 1;
 
       // TODO: is this needed? CHECK_CHANNELS_CONSISTENCY(f->frame);
@@ -2387,8 +2375,9 @@ napi_value alloc(napi_env env, napi_callback_info info) {
       for ( int x = 0 ; x < AV_NUM_DATA_POINTERS ; x++ ) {
         if (f->frame->linesize[x] > 0) {
           int bufSize = f->frame->linesize[x] * f->frame->height;
-          f->frame->buf[x] = av_buffer_alloc(
-            (bufSize > AV_INPUT_BUFFER_MIN_SIZE) ? bufSize : AV_INPUT_BUFFER_MIN_SIZE);
+          // FFmpeg 8: AV_INPUT_BUFFER_MIN_SIZE removed, use buffer size directly with reasonable minimum
+          int minBufSize = bufSize > 16384 ? bufSize : 16384;
+          f->frame->buf[x] = av_buffer_alloc(minBufSize);
           f->frame->data[x] = f->frame->buf[x]->data;
         } else {
           f->frame->data[x] = nullptr;
@@ -2396,11 +2385,13 @@ napi_value alloc(napi_env env, napi_callback_info info) {
         }
       }
     }
-    else if (f->frame->nb_samples > 0 && (f->frame->channel_layout || f->frame->channels > 0)) {
+    // FFmpeg 8: Use ch_layout.nb_channels instead of channel_layout/channels
+    else if (f->frame->nb_samples > 0 && f->frame->ch_layout.nb_channels > 0) {
       int planar = av_sample_fmt_is_planar((AVSampleFormat) f->frame->format);
       if (planar) {
         for ( int x = 0 ; x < AV_NUM_DATA_POINTERS ; x++ ) {
-          if (x < f->frame->channels) {
+          // FFmpeg 8: Use ch_layout.nb_channels instead of channels
+          if (x < f->frame->ch_layout.nb_channels) {
             f->frame->buf[x] = av_buffer_alloc(f->frame->linesize[0]);
             f->frame->data[x] = f->frame->buf[x]->data;
           } else {
