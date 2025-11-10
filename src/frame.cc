@@ -223,8 +223,8 @@ napi_value getFrameFormat(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**) &f);
   CHECK_STATUS;
 
-  // Assume audio data using FFmpeg's own technique
-  if (f->frame->nb_samples > 0 && (f->frame->channel_layout || f->frame->channels > 0)) {
+  // FFmpeg 8: Assume audio data using channels check
+  if (f->frame->nb_samples > 0 && f->frame->ch_layout.nb_channels > 0) {
     name = av_get_sample_fmt_name((AVSampleFormat) f->frame->format);
   }
   if (name == nullptr) { // Assume that it is video data
@@ -278,7 +278,8 @@ napi_value setFrameFormat(napi_env env, napi_callback_info info) {
     format = (int) av_get_sample_fmt((const char*) name);
     if ((format != AV_SAMPLE_FMT_NONE) && (f->frame->nb_samples == 0)) {
       f->frame->nb_samples = 1; // Cludge ... found a sample format ... force audio mode
-      f->frame->channels = 1;
+      // FFmpeg 8: Set channel layout to mono instead of channels
+      av_channel_layout_default(&f->frame->ch_layout, 1);
     }
   }
 
@@ -298,7 +299,8 @@ napi_value getFrameKeyFrame(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**) &f);
   CHECK_STATUS;
 
-  status = napi_get_boolean(env, (f->frame->key_frame == 1), &result);
+  // FFmpeg 8: Use AV_FRAME_FLAG_KEY in flags instead of key_frame
+  status = napi_get_boolean(env, (f->frame->flags & AV_FRAME_FLAG_KEY) != 0, &result);
   CHECK_STATUS;
   return result;
 }
@@ -325,7 +327,12 @@ napi_value setFrameKeyFrame(napi_env env, napi_callback_info info) {
   }
   status = napi_get_value_bool(env, args[0], &keyFrame);
   CHECK_STATUS;
-  f->frame->key_frame = (keyFrame) ? 1 : 0;
+  // FFmpeg 8: Use AV_FRAME_FLAG_KEY in flags instead of key_frame
+  if (keyFrame) {
+    f->frame->flags |= AV_FRAME_FLAG_KEY;
+  } else {
+    f->frame->flags &= ~AV_FRAME_FLAG_KEY;
+  }
 
   status = napi_get_undefined(env, &result);
   CHECK_STATUS;
@@ -781,7 +788,8 @@ napi_value getFrameInterlaced(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**) &f);
   CHECK_STATUS;
 
-  status = napi_get_boolean(env, f->frame->interlaced_frame == 1, &result);
+  // FFmpeg 8: Use AV_FRAME_FLAG_INTERLACED in flags instead of interlaced_frame
+  status = napi_get_boolean(env, (f->frame->flags & AV_FRAME_FLAG_INTERLACED) != 0, &result);
   CHECK_STATUS;
   return result;
 }
@@ -808,7 +816,12 @@ napi_value setFrameInterlaced(napi_env env, napi_callback_info info) {
   }
   status = napi_get_value_bool(env, args[0], &interlaced);
   CHECK_STATUS;
-  f->frame->interlaced_frame = (interlaced) ? 1 : 0;
+  // FFmpeg 8: Use AV_FRAME_FLAG_INTERLACED in flags instead of interlaced_frame
+  if (interlaced) {
+    f->frame->flags |= AV_FRAME_FLAG_INTERLACED;
+  } else {
+    f->frame->flags &= ~AV_FRAME_FLAG_INTERLACED;
+  }
 
   status = napi_get_undefined(env, &result);
   CHECK_STATUS;
@@ -823,7 +836,8 @@ napi_value getFrameTopFieldFirst(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**) &f);
   CHECK_STATUS;
 
-  status = napi_get_boolean(env, f->frame->top_field_first == 1, &result);
+  // FFmpeg 8: Use AV_FRAME_FLAG_TOP_FIELD_FIRST in flags instead of top_field_first
+  status = napi_get_boolean(env, (f->frame->flags & AV_FRAME_FLAG_TOP_FIELD_FIRST) != 0, &result);
   CHECK_STATUS;
   return result;
 }
@@ -850,7 +864,12 @@ napi_value setFrameTopFieldFirst(napi_env env, napi_callback_info info) {
   }
   status = napi_get_value_bool(env, args[0], &topFieldFirst);
   CHECK_STATUS;
-  f->frame->top_field_first = (topFieldFirst) ? 1 : 0;
+  // FFmpeg 8: Use AV_FRAME_FLAG_TOP_FIELD_FIRST in flags instead of top_field_first
+  if (topFieldFirst) {
+    f->frame->flags |= AV_FRAME_FLAG_TOP_FIELD_FIRST;
+  } else {
+    f->frame->flags &= ~AV_FRAME_FLAG_TOP_FIELD_FIRST;
+  }
 
   status = napi_get_undefined(env, &result);
   CHECK_STATUS;
@@ -1033,7 +1052,8 @@ napi_value setFrameChanLayout(napi_env env, napi_callback_info info) {
   status = napi_typeof(env, args[0], &type);
   CHECK_STATUS;
   if ((type == napi_null) || (type == napi_undefined)) {
-    f->frame->channel_layout = 0;
+    // FFmpeg 8: Reset channel layout to empty
+    av_channel_layout_uninit(&f->frame->ch_layout);
     goto done;
   }
   if (type != napi_string) {
@@ -1045,7 +1065,9 @@ napi_value setFrameChanLayout(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, args[0], name, len + 1, &len);
   CHECK_STATUS;
 
-  f->frame->channel_layout = av_get_channel_layout(name);
+  // FFmpeg 8: Use av_channel_layout_from_string instead of av_get_channel_layout
+  av_channel_layout_uninit(&f->frame->ch_layout);
+  av_channel_layout_from_string(&f->frame->ch_layout, name);
   free(name);
 
 done:
