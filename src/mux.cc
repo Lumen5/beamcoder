@@ -21,7 +21,8 @@
 
 #include "mux.h"
 
-int write_packet(void *opaque, uint8_t *buf, int buf_size)
+// FFmpeg 8: write_packet callback now requires const uint8_t* for buffer parameter
+int write_packet(void *opaque, const uint8_t *buf, int buf_size)
 {
   Adaptor *adaptor = (Adaptor *)opaque;
   return adaptor->write(buf, buf_size);
