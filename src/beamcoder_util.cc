@@ -1007,7 +1007,7 @@ std::unordered_map<int, std::string> beam_ff_idct_fmap = {
   { FF_IDCT_SIMPLEARMV6, "simplearmv6" },
   { FF_IDCT_FAAN, "faan" },
   { FF_IDCT_SIMPLENEON, "simpleneon" },
-  { FF_IDCT_NONE, "none" },
+  // FF_IDCT_NONE removed in FFmpeg 8
   { FF_IDCT_SIMPLEAUTO, "simpleauto" },
 };
 const beamEnum* beam_ff_idct = new beamEnum(beam_ff_idct_fmap);
@@ -1062,7 +1062,7 @@ std::unordered_map<int, std::string> beam_option_type_fmap = {
   { AV_OPT_TYPE_VIDEO_RATE, "video_rate" }, ///< offset must point to AVRational
   { AV_OPT_TYPE_DURATION, "duration" },
   { AV_OPT_TYPE_COLOR, "color" },
-  { AV_OPT_TYPE_CHANNEL_LAYOUT, "channel_layout" },
+  { AV_OPT_TYPE_CHLAYOUT, "channel_layout" }, // FFmpeg 8: AV_OPT_TYPE_CHANNEL_LAYOUT -> AV_OPT_TYPE_CHLAYOUT
   { AV_OPT_TYPE_BOOL, "bool" }
 };
 const beamEnum* beam_option_type = new beamEnum(beam_option_type_fmap);
