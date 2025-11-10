@@ -263,7 +263,6 @@ napi_status fromAVCodec(napi_env env, const AVCodec* codec, napi_value *result) 
   const int* samplerate;
   const AVCodecDescriptor* codecDesc;
   const enum AVSampleFormat* samplefmt;
-  const uint64_t* chanlay;
   int32_t index = 0;
 
   status = napi_get_null(env, &nullval);
@@ -321,10 +320,12 @@ napi_status fromAVCodec(napi_env env, const AVCodec* codec, napi_value *result) 
   status = beam_set_bool(env, props, "AVOID_PROBING", codec->capabilities & AV_CODEC_CAP_AVOID_PROBING);
   PASS_STATUS;
   // AV_CODEC_CAP_INTRA_ONLY moved to AV_CODEC_PROP_INTRA_ONLY in FFmpeg 8
-  status = beam_set_bool(env, props, "INTRA_ONLY", codec->props & AV_CODEC_PROP_INTRA_ONLY);
+  // Use AVCodecDescriptor to access props
+  codecDesc = avcodec_descriptor_get(codec->id);
+  status = beam_set_bool(env, props, "INTRA_ONLY", codecDesc && (codecDesc->props & AV_CODEC_PROP_INTRA_ONLY));
   PASS_STATUS;
   // AV_CODEC_CAP_LOSSLESS moved to AV_CODEC_PROP_LOSSLESS in FFmpeg 8
-  status = beam_set_bool(env, props, "LOSSLESS", codec->props & AV_CODEC_PROP_LOSSLESS);
+  status = beam_set_bool(env, props, "LOSSLESS", codecDesc && (codecDesc->props & AV_CODEC_PROP_LOSSLESS));
   PASS_STATUS;
   status = beam_set_bool(env, props, "HARDWARE", codec->capabilities & AV_CODEC_CAP_HARDWARE);
   PASS_STATUS;
