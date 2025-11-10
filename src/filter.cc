@@ -511,7 +511,8 @@ napi_value getLinkChannelLayout(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
 
   char channelLayoutStr[30];
-  av_get_channel_layout_string(channelLayoutStr, 30, -1, filterLink->channel_layout);
+  // FFmpeg 8: Use ch_layout instead of channel_layout
+  av_channel_layout_describe(&filterLink->ch_layout, channelLayoutStr, sizeof(channelLayoutStr));
 
   napi_value channelLayoutVal;
   status = napi_create_string_utf8(env, channelLayoutStr, NAPI_AUTO_LENGTH, &channelLayoutVal);
@@ -1017,9 +1018,11 @@ void filtererExecute(napi_env env, void* data) {
       }
       p = c->outParams[i].find("channel_layouts");
       if (p != c->outParams[i].end()) {
-        const int64_t out_channel_layouts[] = { (int64_t)av_get_channel_layout(p->second.c_str()), -1 };
-        ret = av_opt_set_int_list(sinkCtx, "channel_layouts", out_channel_layouts, -1,
-                                  AV_OPT_SEARCH_CHILDREN);
+        // FFmpeg 8: Use AVChannelLayout instead of int64_t channel_layout
+        AVChannelLayout out_ch_layout;
+        av_channel_layout_from_string(&out_ch_layout, p->second.c_str());
+        ret = av_opt_set_chlayout(sinkCtx, "ch_layouts", &out_ch_layout, AV_OPT_SEARCH_CHILDREN);
+        av_channel_layout_uninit(&out_ch_layout);
         if (ret < 0) { av_log(NULL, AV_LOG_ERROR, "Cannot set output channel layout\n"); }
       }
     } else {

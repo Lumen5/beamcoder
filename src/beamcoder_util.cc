@@ -761,15 +761,20 @@ napi_status fromContextPrivData(napi_env env, void *privData, napi_value* result
         status = beam_set_string_utf8(env, optionsVal, option->name, "unmapped type: color");
         PASS_STATUS;
         break;
-      case AV_OPT_TYPE_CHANNEL_LAYOUT:
-        ret = av_opt_get_channel_layout(privData, option->name, 0, &iValue);
-        if (ret < 0) {
-          return napi_number_expected;
+      case AV_OPT_TYPE_CHLAYOUT:
+        // FFmpeg 8: Use AVChannelLayout instead of int64_t channel_layout
+        {
+          AVChannelLayout ch_layout;
+          ret = av_opt_get_chlayout(privData, option->name, 0, &ch_layout);
+          if (ret < 0) {
+            return napi_number_expected;
+          }
+          av_channel_layout_describe(&ch_layout, chanLayStr, sizeof(chanLayStr));
+          // printf("fromPrivOptions: channel layout option %s: %s\n", option->name, chanLayStr);
+          status = beam_set_string_utf8(env, optionsVal, option->name, chanLayStr);
+          av_channel_layout_uninit(&ch_layout);
+          PASS_STATUS;
         }
-        av_get_channel_layout_string(chanLayStr, 64, 0, iValue);
-        // printf("fromPrivOptions: channel layout option %s: %lli - %s\n", option->name, iValue, chanLayStr);
-        status = beam_set_string_utf8(env, optionsVal, option->name, chanLayStr);
-        PASS_STATUS;
         break;
       case AV_OPT_TYPE_BOOL:
         ret = av_opt_get_int(privData, option->name, 0, &iValue);

@@ -3653,8 +3653,15 @@ napi_value getCodecCtxChanLayout(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, &argc, nullptr, nullptr, (void**) &codec);
   CHECK_STATUS;
 
-  av_get_channel_layout_string(channelLayoutName, 64, 0,
-    codec->channel_layout ? codec->channel_layout : av_get_default_channel_layout(codec->channels));
+  // FFmpeg 8: Use ch_layout instead of channel_layout
+  AVChannelLayout temp_layout;
+  if (codec->ch_layout.nb_channels > 0) {
+    av_channel_layout_describe(&codec->ch_layout, channelLayoutName, sizeof(channelLayoutName));
+  } else {
+    av_channel_layout_default(&temp_layout, codec->ch_layout.nb_channels);
+    av_channel_layout_describe(&temp_layout, channelLayoutName, sizeof(channelLayoutName));
+    av_channel_layout_uninit(&temp_layout);
+  }
   status = napi_create_string_utf8(env, channelLayoutName, NAPI_AUTO_LENGTH, &result);
   CHECK_STATUS;
 
@@ -3717,14 +3724,10 @@ napi_value getCodecCtxReqChanLayout(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, &argc, nullptr, nullptr, (void**) &codec);
   CHECK_STATUS;
 
-  if (codec->request_channel_layout) {
-    av_get_channel_layout_string(channelLayoutName, 64, 0, codec->request_channel_layout);
-    status = napi_create_string_utf8(env, channelLayoutName, NAPI_AUTO_LENGTH, &result);
-    CHECK_STATUS;
-  } else {
-    status = napi_create_string_utf8(env, "default", NAPI_AUTO_LENGTH, &result);
-    CHECK_STATUS;
-  }
+  // FFmpeg 8: request_channel_layout removed, feature no longer supported
+  // Return "default" for backward compatibility
+  status = napi_create_string_utf8(env, "default", NAPI_AUTO_LENGTH, &result);
+  CHECK_STATUS;
 
   return result;
 }

@@ -922,8 +922,15 @@ napi_value getCodecParChanLayout(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**) &c);
   CHECK_STATUS;
 
-  av_get_channel_layout_string(enumName, 64, 0,
-    c->channel_layout ? c->channel_layout : av_get_default_channel_layout(c->channels));
+  // FFmpeg 8: Use ch_layout instead of channel_layout
+  AVChannelLayout temp_layout;
+  if (c->ch_layout.nb_channels > 0) {
+    av_channel_layout_describe(&c->ch_layout, enumName, sizeof(enumName));
+  } else {
+    av_channel_layout_default(&temp_layout, c->ch_layout.nb_channels);
+    av_channel_layout_describe(&temp_layout, enumName, sizeof(enumName));
+    av_channel_layout_uninit(&temp_layout);
+  }
   status = napi_create_string_utf8(env, enumName, NAPI_AUTO_LENGTH, &result);
   CHECK_STATUS;
 

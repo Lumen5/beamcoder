@@ -293,13 +293,15 @@ napi_status fromAVCodec(napi_env env, const AVCodec* codec, napi_value *result) 
   PASS_STATUS;
   status = beam_set_bool(env, props, "DR1", codec->capabilities & AV_CODEC_CAP_DR1);
   PASS_STATUS;
-  status = beam_set_bool(env, props, "TRUNCATED", codec->capabilities & AV_CODEC_CAP_TRUNCATED);
+  // AV_CODEC_CAP_TRUNCATED removed in FFmpeg 8
+  status = beam_set_bool(env, props, "TRUNCATED", false);
   PASS_STATUS;
   status = beam_set_bool(env, props, "DELAY", codec->capabilities & AV_CODEC_CAP_DELAY);
   PASS_STATUS;
   status = beam_set_bool(env, props, "SMALL_LAST_FRAME", codec->capabilities & AV_CODEC_CAP_SMALL_LAST_FRAME);
   PASS_STATUS;
-  status = beam_set_bool(env, props, "SUBFRAMES", codec->capabilities & AV_CODEC_CAP_SUBFRAMES);
+  // AV_CODEC_CAP_SUBFRAMES removed in FFmpeg 8
+  status = beam_set_bool(env, props, "SUBFRAMES", false);
   PASS_STATUS;
   status = beam_set_bool(env, props, "EXPERIMENTAL", codec->capabilities & AV_CODEC_CAP_EXPERIMENTAL);
   PASS_STATUS;
@@ -311,15 +313,18 @@ napi_status fromAVCodec(napi_env env, const AVCodec* codec, napi_value *result) 
   PASS_STATUS;
   status = beam_set_bool(env, props, "PARAM_CHANGE", codec->capabilities & AV_CODEC_CAP_PARAM_CHANGE);
   PASS_STATUS;
-  status = beam_set_bool(env, props, "AUTO_THREADS", codec->capabilities & AV_CODEC_CAP_AUTO_THREADS);
+  // AV_CODEC_CAP_AUTO_THREADS removed in FFmpeg 8
+  status = beam_set_bool(env, props, "AUTO_THREADS", false);
   PASS_STATUS;
   status = beam_set_bool(env, props, "VARIABLE_FRAME_SIZE", codec->capabilities & AV_CODEC_CAP_VARIABLE_FRAME_SIZE);
   PASS_STATUS;
   status = beam_set_bool(env, props, "AVOID_PROBING", codec->capabilities & AV_CODEC_CAP_AVOID_PROBING);
   PASS_STATUS;
-  status = beam_set_bool(env, props, "INTRA_ONLY", codec->capabilities & AV_CODEC_CAP_INTRA_ONLY);
+  // AV_CODEC_CAP_INTRA_ONLY moved to AV_CODEC_PROP_INTRA_ONLY in FFmpeg 8
+  status = beam_set_bool(env, props, "INTRA_ONLY", codec->props & AV_CODEC_PROP_INTRA_ONLY);
   PASS_STATUS;
-  status = beam_set_bool(env, props, "LOSSLESS", codec->capabilities & AV_CODEC_CAP_LOSSLESS);
+  // AV_CODEC_CAP_LOSSLESS moved to AV_CODEC_PROP_LOSSLESS in FFmpeg 8
+  status = beam_set_bool(env, props, "LOSSLESS", codec->props & AV_CODEC_PROP_LOSSLESS);
   PASS_STATUS;
   status = beam_set_bool(env, props, "HARDWARE", codec->capabilities & AV_CODEC_CAP_HARDWARE);
   PASS_STATUS;
@@ -414,19 +419,20 @@ napi_status fromAVCodec(napi_env env, const AVCodec* codec, napi_value *result) 
     PASS_STATUS;
   }
 
-  if (codec->channel_layouts != nullptr) {
+  // Channel layouts API changed in FFmpeg 8 - ch_layouts is now an array of AVChannelLayout structs
+  if (codec->ch_layouts != nullptr) {
     status = napi_create_array(env, &array);
     PASS_STATUS;
-    chanlay = codec->channel_layouts;
     index = 0;
-    while (*chanlay != 0) {
+    const AVChannelLayout *ch_layout = codec->ch_layouts;
+    while (ch_layout->nb_channels != 0) {
       char chanLayStr[64];
-      av_get_channel_layout_string(chanLayStr, 64, 0, *chanlay);
+      av_channel_layout_describe(ch_layout, chanLayStr, sizeof(chanLayStr));
       status = napi_create_string_utf8(env, chanLayStr, NAPI_AUTO_LENGTH, &element);
       PASS_STATUS;
       status = napi_set_element(env, array, index++, element);
       PASS_STATUS;
-      chanlay = chanlay + 1;
+      ch_layout = ch_layout + 1;
     }
     status = napi_set_named_property(env, value, "channel_layouts", array);
     PASS_STATUS;
@@ -454,7 +460,7 @@ napi_status fromAVCodec(napi_env env, const AVCodec* codec, napi_value *result) 
     profile = codec->profiles;
     index = 0;
     // printf("Profiles for %s %s\n", codec->name, profile->name);
-    while (profile->profile != FF_PROFILE_UNKNOWN) {
+    while (profile->profile != AV_PROFILE_UNKNOWN) {
       status = napi_create_string_utf8(env, profile->name, NAPI_AUTO_LENGTH, &element);
       PASS_STATUS;
       status = napi_set_element(env, array, index++, element);
