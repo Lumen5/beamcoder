@@ -24,7 +24,8 @@
         "cflags_cc": [
           "-std=c++11",
           "-fexceptions",
-          "-fPIC"
+          "-fPIC",
+          "-fvisibility=hidden"
         ]
       }],
       ['OS!="win" and OS!="linux" and ffmpeg_static==0', {
