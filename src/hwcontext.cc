@@ -24,7 +24,7 @@
 void hwContextFinalizer(napi_env env, void* data, void* hint) {
   printf("Finalizing a hw context reference\n");
   AVBufferRef* ctxRef = (AVBufferRef*) data;
-  av_buffer_unref(&ctxRef);
+  ffmpeg_static_av_buffer_unref(&ctxRef);
 }
 
 napi_value getHWDeviceCtxType(napi_env env, napi_callback_info info) {
@@ -95,7 +95,7 @@ napi_status fromHWDeviceContext(napi_env env, AVBufferRef* contextRef, napi_valu
   PASS_STATUS;
   status = napi_create_string_utf8(env, "HWDeviceContext", NAPI_AUTO_LENGTH, &typeName);
   PASS_STATUS;
-  status = napi_create_external(env, (void*)av_buffer_ref(contextRef), hwContextFinalizer, nullptr, &extContextRef);
+  status = napi_create_external(env, (void*)ffmpeg_static_av_buffer_ref(contextRef), hwContextFinalizer, nullptr, &extContextRef);
   PASS_STATUS;
 
   napi_property_descriptor desc[] = {
@@ -148,7 +148,7 @@ napi_value getHWFramesCtxPixFmt(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
 
   AVPixelFormat pixFmt = frames_context->format;
-  status = napi_create_string_utf8(env, av_get_pix_fmt_name(pixFmt), NAPI_AUTO_LENGTH, &result);
+  status = napi_create_string_utf8(env, ffmpeg_static_av_get_pix_fmt_name(pixFmt), NAPI_AUTO_LENGTH, &result);
   CHECK_STATUS;
 
   return result;
@@ -185,7 +185,7 @@ napi_value setHWFramesCtxPixFmt(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, args[0], name, strLen + 1, &strLen);
   CHECK_STATUS;
 
-  pixFmt = av_get_pix_fmt((const char *) name);
+  pixFmt = ffmpeg_static_av_get_pix_fmt((const char *) name);
   free(name);
   CHECK_STATUS;
   if (pixFmt != AV_PIX_FMT_NONE) {
@@ -209,7 +209,7 @@ napi_value getHWFramesCtxSwPixFmt(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
 
   AVPixelFormat pixFmt = frames_context->sw_format;
-  status = napi_create_string_utf8(env, av_get_pix_fmt_name(pixFmt), NAPI_AUTO_LENGTH, &result);
+  status = napi_create_string_utf8(env, ffmpeg_static_av_get_pix_fmt_name(pixFmt), NAPI_AUTO_LENGTH, &result);
   CHECK_STATUS;
 
   return result;
@@ -246,7 +246,7 @@ napi_value setHWFramesCtxSwPixFmt(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, args[0], name, strLen + 1, &strLen);
   CHECK_STATUS;
 
-  pixFmt = av_get_pix_fmt((const char *) name);
+  pixFmt = ffmpeg_static_av_get_pix_fmt((const char *) name);
   free(name);
   CHECK_STATUS;
   if (pixFmt != AV_PIX_FMT_NONE) {
@@ -351,7 +351,7 @@ napi_status fromHWFramesContext(napi_env env, AVBufferRef* contextRef, napi_valu
   PASS_STATUS;
   status = napi_create_string_utf8(env, "HWFramesContext", NAPI_AUTO_LENGTH, &typeName);
   PASS_STATUS;
-  status = napi_create_external(env, (void*)av_buffer_ref(contextRef), hwContextFinalizer, nullptr, &extContextRef);
+  status = napi_create_external(env, (void*)ffmpeg_static_av_buffer_ref(contextRef), hwContextFinalizer, nullptr, &extContextRef);
   PASS_STATUS;
 
   napi_property_descriptor desc[] = {

@@ -71,7 +71,7 @@ napi_status toFilterPrivData(napi_env env, napi_value params, AVFilterContext *f
       sValue = (char*) malloc(sizeof(char) * (sLen + 1));
       status = napi_get_value_string_utf8(env, element, sValue, sLen + 1, &sLen);
       PASS_STATUS;
-      option = av_opt_find(priv_data, sValue, nullptr, 0, 0);
+      option = ffmpeg_static_av_opt_find(priv_data, sValue, nullptr, 0, 0);
       if (option != nullptr) {
         if (option->flags & AV_OPT_FLAG_READONLY) { continue; }
         status = napi_get_named_property(env, params, sValue, &element);
@@ -82,7 +82,7 @@ napi_status toFilterPrivData(napi_env env, napi_value params, AVFilterContext *f
           case napi_boolean:
             status = napi_get_value_bool(env, element, &flag);
             PASS_STATUS;
-            ret = av_opt_set_int(priv_data, sValue, flag, 0);
+            ret = ffmpeg_static_av_opt_set_int(priv_data, sValue, flag, 0);
             if (ret < 0) printf("DEBUG: Unable to set %s with a boolean value.\n", sValue);
             break;
           case napi_number:
@@ -90,13 +90,13 @@ napi_status toFilterPrivData(napi_env env, napi_value params, AVFilterContext *f
                 (option->type == AV_OPT_TYPE_FLOAT)) {
               status = napi_get_value_double(env, element, &dValue);
               PASS_STATUS;
-              ret = av_opt_set_double(priv_data, sValue, dValue, 0);
+              ret = ffmpeg_static_av_opt_set_double(priv_data, sValue, dValue, 0);
               if (ret < 0) printf("DEBUG: Unable to set %s with a double value %f.\n", sValue, dValue);
               break;
             }
             status = napi_get_value_int64(env, element, &iValue);
             PASS_STATUS;
-            ret = av_opt_set_int(priv_data, sValue, iValue, 0);
+            ret = ffmpeg_static_av_opt_set_int(priv_data, sValue, iValue, 0);
             if (ret < 0) printf("DEBUG: Unable to set %s with an integer value %" PRId64 ": %s.\n",
               sValue, iValue, avErrorMsg("", ret));
             break;
@@ -107,7 +107,7 @@ napi_status toFilterPrivData(napi_env env, napi_value params, AVFilterContext *f
             PASS_STATUS;
             status = napi_get_value_string_utf8(env, element, strProp, sLen + 1, &sLen);
             PASS_STATUS;
-            ret = avfilter_graph_send_command (graph, filterContext->name, sValue, strProp, nullptr, 0, 0);
+            ret = ffmpeg_static_avfilter_graph_send_command (graph, filterContext->name, sValue, strProp, nullptr, 0, 0);
             free(strProp);
             if (ret < 0) printf("DEBUG: Unable to set %s with a string value %s.\n", sValue, strProp);
             break;
@@ -136,7 +136,7 @@ napi_status toFilterPrivData(napi_env env, napi_value params, AVFilterContext *f
               }
               status = napi_get_value_int32(env, subel, &qValue.den);
               PASS_STATUS;
-              ret = av_opt_set_q(priv_data, sValue, qValue, 0);
+              ret = ffmpeg_static_av_opt_set_q(priv_data, sValue, qValue, 0);
               if (ret < 0) {
                 printf("DEBUG: Failed to set rational property %s.\n", sValue);
               }
@@ -250,7 +250,7 @@ napi_value getFilterPads(napi_env env, AVFilter* filter, bool isOutput) {
   const AVFilterPad* filterPads;
   int padCount;
 
-  padCount = avfilter_filter_pad_count(filter, isOutput);
+  padCount = ffmpeg_static_avfilter_filter_pad_count(filter, isOutput);
   if (0 == padCount) {
     status = napi_get_null(env, &result);
     CHECK_STATUS;
@@ -262,10 +262,10 @@ napi_value getFilterPads(napi_env env, AVFilter* filter, bool isOutput) {
       status = napi_create_object(env, &pad);
       CHECK_STATUS;
       status = beam_set_string_utf8(env, pad, "name",
-        (char*) avfilter_pad_get_name(filterPads, x));
+        (char*) ffmpeg_static_avfilter_pad_get_name(filterPads, x));
       CHECK_STATUS;
       status = beam_set_string_utf8(env, pad, "media_type",
-        (char*) av_get_media_type_string(avfilter_pad_get_type(filterPads, x)));
+        (char*) ffmpeg_static_av_get_media_type_string(ffmpeg_static_avfilter_pad_get_type(filterPads, x)));
       CHECK_STATUS;
       status = napi_set_element(env, result, x, pad);
       CHECK_STATUS;
@@ -391,7 +391,7 @@ napi_value getLinkSrcPad(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
 
   napi_value strVal;
-  status = napi_create_string_utf8(env, avfilter_pad_get_name(filterLink->srcpad, 0), NAPI_AUTO_LENGTH, &strVal);
+  status = napi_create_string_utf8(env, ffmpeg_static_avfilter_pad_get_name(filterLink->srcpad, 0), NAPI_AUTO_LENGTH, &strVal);
   CHECK_STATUS;
 
   return strVal;
@@ -419,7 +419,7 @@ napi_value getLinkDstPad(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
 
   napi_value strVal;
-  status = napi_create_string_utf8(env, avfilter_pad_get_name(filterLink->dstpad, 0), NAPI_AUTO_LENGTH, &strVal);
+  status = napi_create_string_utf8(env, ffmpeg_static_avfilter_pad_get_name(filterLink->dstpad, 0), NAPI_AUTO_LENGTH, &strVal);
   CHECK_STATUS;
 
   return strVal;
@@ -433,7 +433,7 @@ napi_value getLinkMediaType(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
 
   napi_value strVal;
-  status = napi_create_string_utf8(env, av_get_media_type_string(filterLink->type), NAPI_AUTO_LENGTH, &strVal);
+  status = napi_create_string_utf8(env, ffmpeg_static_av_get_media_type_string(filterLink->type), NAPI_AUTO_LENGTH, &strVal);
   CHECK_STATUS;
 
   return strVal;
@@ -497,7 +497,7 @@ napi_value getLinkChannelCount(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
 
   napi_value channelCountVal;
-  int channelCount = av_get_channel_layout_nb_channels(filterLink->channel_layout);
+  int channelCount = ffmpeg_static_av_get_channel_layout_nb_channels(filterLink->channel_layout);
   status = napi_create_int32(env, channelCount, &channelCountVal);
 
   return channelCountVal;
@@ -511,7 +511,7 @@ napi_value getLinkChannelLayout(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
 
   char channelLayoutStr[30];
-  av_get_channel_layout_string(channelLayoutStr, 30, -1, filterLink->channel_layout);
+  ffmpeg_static_av_get_channel_layout_string(channelLayoutStr, 30, -1, filterLink->channel_layout);
 
   napi_value channelLayoutVal;
   status = napi_create_string_utf8(env, channelLayoutStr, NAPI_AUTO_LENGTH, &channelLayoutVal);
@@ -544,10 +544,10 @@ napi_value getLinkFormat(napi_env env, napi_callback_info info) {
   const char *formatName;
   switch (filterLink->type) {
   case AVMEDIA_TYPE_VIDEO:
-    formatName = av_get_pix_fmt_name((AVPixelFormat)filterLink->format);
+    formatName = ffmpeg_static_av_get_pix_fmt_name((AVPixelFormat)filterLink->format);
     break;
   case AVMEDIA_TYPE_AUDIO:
-    formatName = av_get_sample_fmt_name((AVSampleFormat)filterLink->format);
+    formatName = ffmpeg_static_av_get_sample_fmt_name((AVSampleFormat)filterLink->format);
     break;
   default:
     formatName = "unrecognised";
@@ -807,7 +807,7 @@ napi_value getGraphScaleOpts(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, nullptr, nullptr, nullptr, (void**) &filterGraph);
   CHECK_STATUS;
 
-  // printf("sws_scale_opts: \'%s\'\n", filterGraph->scale_sws_opts);
+  // printf("ffmpeg_static_sws_scale_opts: \'%s\'\n", filterGraph->scale_sws_opts);
   if (nullptr == filterGraph->scale_sws_opts)
     status = napi_get_null(env, &result);
   else
@@ -854,7 +854,7 @@ napi_value dumpGraph(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
 
   status = napi_create_string_utf8(env,
-    avfilter_graph_dump(filterGraph, nullptr),
+    ffmpeg_static_avfilter_graph_dump(filterGraph, nullptr),
     NAPI_AUTO_LENGTH, &result);
   CHECK_STATUS;
 
@@ -938,7 +938,7 @@ struct filtererCarrier : carrier {
 
 void graphFinalizer(napi_env env, void* data, void* hint) {
   AVFilterGraph* graph = (AVFilterGraph*)data;
-  avfilter_graph_free(&graph);
+  ffmpeg_static_avfilter_graph_free(&graph);
 }
 
 void ctxsFinalizer(napi_env env, void* data, void* hint) {
@@ -950,17 +950,17 @@ void filtererExecute(napi_env env, void* data) {
   filtererCarrier* c = (filtererCarrier*) data;
   int ret = 0;
 
-  c->filterGraph = avfilter_graph_alloc();
+  c->filterGraph = ffmpeg_static_avfilter_graph_alloc();
 
   AVFilterInOut **inputs = new AVFilterInOut*[c->outNames.size()];
   bool inAlloc = true;
   for (size_t i = 0; i < c->outNames.size(); ++i)
-    if (!(inAlloc = (inputs[i] = avfilter_inout_alloc()) != NULL)) break;
+    if (!(inAlloc = (inputs[i] = ffmpeg_static_avfilter_inout_alloc()) != NULL)) break;
 
   AVFilterInOut **outputs = new AVFilterInOut*[c->inParams.size()];
   bool opAlloc = true;
   for (size_t i = 0; i < c->inParams.size(); ++i)
-    if (!(opAlloc = (outputs[i] = avfilter_inout_alloc()) != NULL)) break;
+    if (!(opAlloc = (outputs[i] = ffmpeg_static_avfilter_inout_alloc()) != NULL)) break;
 
   if (!(inAlloc && opAlloc && c->filterGraph)) {
     c->status = BEAMCODER_ERROR_ENOMEM;
@@ -970,15 +970,15 @@ void filtererExecute(napi_env env, void* data) {
 
   c->srcCtxs = new filtContexts;
   for (size_t i = 0; i < c->inParams.size(); ++i) {
-    const AVFilter *buffersrc  = avfilter_get_by_name(0 == c->filterType.compare("audio")?"abuffer":"buffer");
+    const AVFilter *buffersrc  = ffmpeg_static_avfilter_get_by_name(0 == c->filterType.compare("audio")?"abuffer":"buffer");
     AVFilterContext *srcCtx = nullptr;
-    ret = avfilter_graph_create_filter(&srcCtx, buffersrc, c->inNames[i].c_str(), c->inParams[i].c_str(), NULL, c->filterGraph);
+    ret = ffmpeg_static_avfilter_graph_create_filter(&srcCtx, buffersrc, c->inNames[i].c_str(), c->inParams[i].c_str(), NULL, c->filterGraph);
     if (ret < 0) {
       c->status = BEAMCODER_ERROR_ENOMEM;
       c->errorMsg = "Failed to allocate source filter graph.";
       goto end;
     }
-    outputs[i]->name       = av_strdup(c->inNames[i].c_str());
+    outputs[i]->name       = ffmpeg_static_av_strdup(c->inNames[i].c_str());
     outputs[i]->filter_ctx = srcCtx;
     outputs[i]->pad_idx    = 0;
     outputs[i]->next       = i < c->inParams.size() - 1 ? outputs[i + 1] : NULL;
@@ -992,9 +992,9 @@ void filtererExecute(napi_env env, void* data) {
 
   c->sinkCtxs = new filtContexts;
   for (size_t i = 0; i < c->outParams.size(); ++i) {
-    const AVFilter *buffersink = avfilter_get_by_name(0 == c->filterType.compare("audio")?"abuffersink":"buffersink");
+    const AVFilter *buffersink = ffmpeg_static_avfilter_get_by_name(0 == c->filterType.compare("audio")?"abuffersink":"buffersink");
     AVFilterContext *sinkCtx = nullptr;
-    ret = avfilter_graph_create_filter(&sinkCtx, buffersink, c->outNames[i].c_str(), NULL, NULL, c->filterGraph);
+    ret = ffmpeg_static_avfilter_graph_create_filter(&sinkCtx, buffersink, c->outNames[i].c_str(), NULL, NULL, c->filterGraph);
     if (ret < 0) {
       c->status = BEAMCODER_ERROR_ENOMEM;
       c->errorMsg = "Failed to allocate sink filter graph.";
@@ -1004,35 +1004,35 @@ void filtererExecute(napi_env env, void* data) {
       auto p = c->outParams[i].find("sample_rates");
       if (p != c->outParams[i].end()) {
         const int out_sample_rates[] = { std::stoi(p->second.c_str()), -1 };
-        ret = av_opt_set_int_list(sinkCtx, "sample_rates", out_sample_rates, -1,
+        ret = ffmpeg_static_av_opt_set_int_list(sinkCtx, "sample_rates", out_sample_rates, -1,
                                   AV_OPT_SEARCH_CHILDREN);
-        if (ret < 0) { av_log(NULL, AV_LOG_ERROR, "Cannot set output sample rate\n"); }
+        if (ret < 0) { ffmpeg_static_av_log(NULL, AV_LOG_ERROR, "Cannot set output sample rate\n"); }
       }
       p = c->outParams[i].find("sample_fmts");
       if (p != c->outParams[i].end()) {
-        const enum AVSampleFormat out_sample_fmts[] = { av_get_sample_fmt(p->second.c_str()), AV_SAMPLE_FMT_NONE };
-        ret = av_opt_set_int_list(sinkCtx, "sample_fmts", out_sample_fmts, AV_SAMPLE_FMT_NONE,
+        const enum AVSampleFormat out_sample_fmts[] = { ffmpeg_static_av_get_sample_fmt(p->second.c_str()), AV_SAMPLE_FMT_NONE };
+        ret = ffmpeg_static_av_opt_set_int_list(sinkCtx, "sample_fmts", out_sample_fmts, AV_SAMPLE_FMT_NONE,
                                   AV_OPT_SEARCH_CHILDREN);
-        if (ret < 0) { av_log(NULL, AV_LOG_ERROR, "Cannot set output sample format\n"); }
+        if (ret < 0) { ffmpeg_static_av_log(NULL, AV_LOG_ERROR, "Cannot set output sample format\n"); }
       }
       p = c->outParams[i].find("channel_layouts");
       if (p != c->outParams[i].end()) {
-        const int64_t out_channel_layouts[] = { (int64_t)av_get_channel_layout(p->second.c_str()), -1 };
-        ret = av_opt_set_int_list(sinkCtx, "channel_layouts", out_channel_layouts, -1,
+        const int64_t out_channel_layouts[] = { (int64_t)ffmpeg_static_av_get_channel_layout(p->second.c_str()), -1 };
+        ret = ffmpeg_static_av_opt_set_int_list(sinkCtx, "channel_layouts", out_channel_layouts, -1,
                                   AV_OPT_SEARCH_CHILDREN);
-        if (ret < 0) { av_log(NULL, AV_LOG_ERROR, "Cannot set output channel layout\n"); }
+        if (ret < 0) { ffmpeg_static_av_log(NULL, AV_LOG_ERROR, "Cannot set output channel layout\n"); }
       }
     } else {
       auto p = c->outParams[i].find("pix_fmts");
       if (p != c->outParams[i].end()) {
-        enum AVPixelFormat pix_fmts[] = { av_get_pix_fmt(p->second.c_str()), AV_PIX_FMT_NONE };
-        ret = av_opt_set_int_list(sinkCtx, "pix_fmts", pix_fmts, AV_PIX_FMT_NONE,
+        enum AVPixelFormat pix_fmts[] = { ffmpeg_static_av_get_pix_fmt(p->second.c_str()), AV_PIX_FMT_NONE };
+        ret = ffmpeg_static_av_opt_set_int_list(sinkCtx, "pix_fmts", pix_fmts, AV_PIX_FMT_NONE,
                                   AV_OPT_SEARCH_CHILDREN);
-        if (ret < 0) { av_log(NULL, AV_LOG_ERROR, "Cannot set output pixel format\n"); }
+        if (ret < 0) { ffmpeg_static_av_log(NULL, AV_LOG_ERROR, "Cannot set output pixel format\n"); }
       }
     }
 
-    inputs[i]->name       = av_strdup(c->outNames[i].c_str());
+    inputs[i]->name       = ffmpeg_static_av_strdup(c->outNames[i].c_str());
     inputs[i]->filter_ctx = sinkCtx;
     inputs[i]->pad_idx    = 0;
     inputs[i]->next       = i < c->outNames.size() - 1 ? inputs[i + 1] : NULL;
@@ -1044,7 +1044,7 @@ void filtererExecute(napi_env env, void* data) {
     }
   }
 
-  if ((ret = avfilter_graph_parse_ptr(c->filterGraph, c->filterSpec.c_str(), inputs, outputs, NULL)) < 0) {
+  if ((ret = ffmpeg_static_avfilter_graph_parse_ptr(c->filterGraph, c->filterSpec.c_str(), inputs, outputs, NULL)) < 0) {
     c->status = BEAMCODER_ERROR_ENOMEM;
     c->errorMsg = "Failed to parse filter graph.";
     goto end;
@@ -1064,7 +1064,7 @@ void filtererExecute(napi_env env, void* data) {
         }
 
         AVFilterLink *filterLink = c->filterGraph->filters[filterIndex]->outputs[0];
-        filterLink->hw_frames_ctx = av_hwframe_ctx_alloc(data.hardwareDeviceContext);
+        filterLink->hw_frames_ctx = ffmpeg_static_av_hwframe_ctx_alloc(data.hardwareDeviceContext);
         if (!filterLink->hw_frames_ctx) {
           c->status = BEAMCODER_ERROR_ENOMEM;
           c->errorMsg = "Failed to allocate hardware frame context for filter.";
@@ -1077,7 +1077,7 @@ void filtererExecute(napi_env env, void* data) {
         linkFramesContext->height = data.height;
         linkFramesContext->format = data.pixelFormat;
 
-        int initErr = av_hwframe_ctx_init(filterLink->hw_frames_ctx);
+        int initErr = ffmpeg_static_av_hwframe_ctx_init(filterLink->hw_frames_ctx);
         if (initErr) {
           c->status = BEAMCODER_ERROR_ENOMEM;
           c->errorMsg = "Failed to initialize hardware frame context for filter.";
@@ -1086,19 +1086,19 @@ void filtererExecute(napi_env env, void* data) {
       }
 
       ++filterIndex;
-      av_buffer_unref(&data.hardwareDeviceContext);
+      ffmpeg_static_av_buffer_unref(&data.hardwareDeviceContext);
     }
   }
 
-  if ((ret = avfilter_graph_config(c->filterGraph, NULL)) < 0) {
+  if ((ret = ffmpeg_static_avfilter_graph_config(c->filterGraph, NULL)) < 0) {
     c->status = BEAMCODER_ERROR_ENOMEM;
     c->errorMsg = "Failed to configure filter graph.";
     goto end;
   }
 
 end:
-  avfilter_inout_free(inputs);
-  avfilter_inout_free(outputs);
+  ffmpeg_static_avfilter_inout_free(inputs);
+  ffmpeg_static_avfilter_inout_free(outputs);
   delete[] outputs;
 }
 
@@ -1358,8 +1358,8 @@ napi_value filterer(napi_env env, napi_callback_info info) {
       filtererInData inData = {};
       inData.width = width;
       inData.height = height;
-      inData.pixelFormat = av_get_pix_fmt(pixFmt.c_str());
-      inData.softwarePixelFormat = av_get_pix_fmt(swPixFmt.c_str());
+      inData.pixelFormat = ffmpeg_static_av_get_pix_fmt(pixFmt.c_str());
+      inData.softwarePixelFormat = ffmpeg_static_av_get_pix_fmt(swPixFmt.c_str());
 
       bool hasDeviceCtxVal;
       c->status = napi_has_named_property(env, inParamsVal, "hw_device_ctx", &hasDeviceCtxVal);
@@ -1374,7 +1374,7 @@ napi_value filterer(napi_env env, napi_callback_info info) {
         AVBufferRef* hwDeviceCtxRef;
         c->status = napi_get_value_external(env, contextExt, (void**) &hwDeviceCtxRef);
         REJECT_RETURN;
-        inData.hardwareDeviceContext = av_buffer_ref(hwDeviceCtxRef);
+        inData.hardwareDeviceContext = ffmpeg_static_av_buffer_ref(hwDeviceCtxRef);
       }
 
       c->inData.push_back(inData);
@@ -1412,11 +1412,11 @@ napi_value filterer(napi_env env, napi_callback_info info) {
       snprintf(args, sizeof(args),
               "time_base=%d/%d:sample_rate=%d:sample_fmt=%s:channel_layout=%" PRIu64 "",
               timeBase.num, timeBase.den, sampleRate,
-              sampleFormat.c_str(), av_get_channel_layout(channelLayout.c_str()));
+              sampleFormat.c_str(), ffmpeg_static_av_get_channel_layout(channelLayout.c_str()));
     } else {
       snprintf(args, sizeof(args),
               "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
-              width, height, av_get_pix_fmt(pixFmt.c_str()),
+              width, height, ffmpeg_static_av_get_pix_fmt(pixFmt.c_str()),
               timeBase.num, timeBase.den, pixelAspect.num, pixelAspect.den);
     }
     c->inParams.push_back(args);
@@ -1623,7 +1623,7 @@ void filterExecute(napi_env env, void* data) {
 
     std::deque<AVFrame *> frames = it->second;
     while (frames.size() > 0) {
-      ret = av_buffersrc_add_frame_flags(srcCtx, frames.front(), AV_BUFFERSRC_FLAG_KEEP_REF);
+      ret = ffmpeg_static_av_buffersrc_add_frame_flags(srcCtx, frames.front(), AV_BUFFERSRC_FLAG_KEEP_REF);
       if (ret < 0) {
         c->status = BEAMCODER_ERROR_FILTER_ADD_FRAME;
         c->errorMsg = "Error while feeding the filtergraph.";
@@ -1637,14 +1637,14 @@ void filterExecute(napi_env env, void* data) {
   for (auto it = sinkNames.begin(); it != sinkNames.end(); ++it) {
     std::vector<AVFrame *> frames;
     while (1) {
-      AVFrame *filtFrame = av_frame_alloc();
+      AVFrame *filtFrame = ffmpeg_static_av_frame_alloc();
       AVFilterContext *sinkCtx = c->sinkCtxs->getContext(*it);
       if (!sinkCtx) {
         c->status = BEAMCODER_INVALID_ARGS;
         c->errorMsg = "Sink name not found in sink contexts.";
         return;
       }
-      ret = av_buffersink_get_frame(sinkCtx, filtFrame);
+      ret = ffmpeg_static_av_buffersink_get_frame(sinkCtx, filtFrame);
       if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
         break;
       if (ret < 0) {

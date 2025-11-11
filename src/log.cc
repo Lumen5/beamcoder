@@ -35,7 +35,7 @@ napi_value logging(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
 
   if (argc == 0) {
-    logLevel = av_log_get_level();
+    logLevel = ffmpeg_static_av_log_get_level();
     status = napi_create_string_utf8(env,
       (char*) beam_lookup_name(beam_logging_level->forward, logLevel),
       NAPI_AUTO_LENGTH, &result);
@@ -66,7 +66,7 @@ napi_value logging(napi_env env, napi_callback_info info) {
     if (logLevel == BEAM_ENUM_UNKNOWN) {
       NAPI_THROW_ERROR("Logging level string unrecognised");
     }
-    av_log_set_level(logLevel);
+    ffmpeg_static_av_log_set_level(logLevel);
 
     status = napi_get_undefined(env, &result);
     CHECK_STATUS;
@@ -79,9 +79,9 @@ napi_threadsafe_function threadSafeFunction;
 
 // Inspired from https://github.com/FFmpeg/FFmpeg/blob/321a3c244d0a89b2826c38611284cc403a9808fa/libavutil/log.c#L346
 #define LINE_SZ 1024
-void av_log_custom_callback(void* ptr, int level, const char* fmt, va_list vl)
+void ffmpeg_static_av_log_custom_callback(void* ptr, int level, const char* fmt, va_list vl)
 {
-		int av_log_level = av_log_get_level();
+		int ffmpeg_static_av_log_level = ffmpeg_static_av_log_get_level();
     static int print_prefix = 1;
     static int count;
     static char prev[LINE_SZ];
@@ -96,9 +96,9 @@ void av_log_custom_callback(void* ptr, int level, const char* fmt, va_list vl)
         level &= 0xff;
     }
 
-    if (level > av_log_level)
+    if (level > ffmpeg_static_av_log_level)
         return;
-		av_log_format_line(ptr, level, fmt, vl, line, sizeof(line), &print_prefix);
+		ffmpeg_static_av_log_format_line(ptr, level, fmt, vl, line, sizeof(line), &print_prefix);
 		
 		logCarrier* c = new logCarrier;
 		c->msg = line;
@@ -181,6 +181,6 @@ napi_value setLoggingCallback(napi_env env, napi_callback_info info){
   status = napi_unref_threadsafe_function(env, threadSafeFunction);
 	CHECK_STATUS;
   
-	av_log_set_callback(av_log_custom_callback);
+	ffmpeg_static_av_log_set_callback(ffmpeg_static_av_log_custom_callback);
 	return nullptr;
 }

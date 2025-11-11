@@ -42,7 +42,7 @@ struct frameData {
   int32_t extSize = 0;
   ~frameData() {
     // printf("Freeing frame with pts = %i\n", frame->pts);
-    av_frame_free(&frame);
+    ffmpeg_static_av_frame_free(&frame);
   }
 };
 

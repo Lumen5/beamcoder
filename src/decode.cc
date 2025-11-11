@@ -27,14 +27,14 @@ AVPixelFormat get_format(AVCodecContext *s, const AVPixelFormat *pix_fmts)
   int i, err;
 
   for (p = pix_fmts; *p != AV_PIX_FMT_NONE; p++) {
-    const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(*p);
+    const AVPixFmtDescriptor *desc = ffmpeg_static_av_pix_fmt_desc_get(*p);
     const AVCodecHWConfig  *config = NULL;
 
     if (!(desc->flags & AV_PIX_FMT_FLAG_HWACCEL))
       break;
 
     for (i = 0;; i++) {
-      config = avcodec_get_hw_config(s->codec, i);
+      config = ffmpeg_static_avcodec_get_hw_config(s->codec, i);
       if (!config)
         break;
       if (!(config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX))
@@ -44,11 +44,11 @@ AVPixelFormat get_format(AVCodecContext *s, const AVPixelFormat *pix_fmts)
     }
 
     if (config) {
-      err = av_hwdevice_ctx_create(&s->hw_device_ctx, config->device_type, NULL, NULL, 0);
+      err = ffmpeg_static_av_hwdevice_ctx_create(&s->hw_device_ctx, config->device_type, NULL, NULL, 0);
       if (err < 0) {
         char errstr[128];
-        av_make_error_string(errstr, 128, err);
-        printf("Error in get_format av_hwdevice_ctx_create: %s\n", errstr);
+        ffmpeg_static_av_make_error_string(errstr, 128, err);
+        printf("Error in get_format ffmpeg_static_av_hwdevice_ctx_create: %s\n", errstr);
       }
       break;
     }
@@ -119,7 +119,7 @@ napi_value decoder(napi_env env, napi_callback_info info) {
     }
     params = format->streams[streamIdx]->codecpar;
     codecID = params->codec_id;
-    codecName = (char*) avcodec_get_name(params->codec_id);
+    codecName = (char*) ffmpeg_static_avcodec_get_name(params->codec_id);
     codecNameLen = strlen(codecName);
     goto create;
   }
@@ -137,7 +137,7 @@ napi_value decoder(napi_env env, napi_callback_info info) {
     status = napi_get_value_external(env, jsParams, (void**) &params);
     CHECK_STATUS;
     codecID = params->codec_id;
-    codecName = (char*) avcodec_get_name(params->codec_id);
+    codecName = (char*) ffmpeg_static_avcodec_get_name(params->codec_id);
     codecNameLen = strlen(codecName);
     goto create;
   }
@@ -164,23 +164,23 @@ napi_value decoder(napi_env env, napi_callback_info info) {
 
 create:
   codec = ((codecID == -1) && (codecName != nullptr)) ?
-    avcodec_find_decoder_by_name(codecName) :
-    avcodec_find_decoder((AVCodecID) codecID);
+    ffmpeg_static_avcodec_find_decoder_by_name(codecName) :
+    ffmpeg_static_avcodec_find_decoder((AVCodecID) codecID);
   if ((codec == nullptr) && (codecID == -1)) { // one more go via codec descriptor
-    codecDesc = avcodec_descriptor_get_by_name(codecName);
+    codecDesc = ffmpeg_static_avcodec_descriptor_get_by_name(codecName);
     if (codecDesc != nullptr) {
-      codec = avcodec_find_decoder(codecDesc->id);
+      codec = ffmpeg_static_avcodec_find_decoder(codecDesc->id);
     }
   }
   if (codec == nullptr) {
     NAPI_THROW_ERROR("Failed to find a decoder from it's name.");
   }
-  decoder = avcodec_alloc_context3(codec);
+  decoder = ffmpeg_static_avcodec_alloc_context3(codec);
   if (decoder == nullptr) {
     NAPI_THROW_ERROR("Problem allocating decoder context.");
   }
   if (params != nullptr) {
-    if ((ret = avcodec_parameters_to_context(decoder, params))) {
+    if ((ret = ffmpeg_static_avcodec_parameters_to_context(decoder, params))) {
       printf("DEBUG: Failed to set context parameters from those provided.");
     }
   }
@@ -214,16 +214,16 @@ create:
 
 bail:
   if (decoder != nullptr) {
-    avcodec_close(decoder);
-    avcodec_free_context(&decoder);
+    ffmpeg_static_avcodec_close(decoder);
+    ffmpeg_static_avcodec_free_context(&decoder);
   }
   return nullptr;
 }
 
 void decoderFinalizer(napi_env env, void* data, void* hint) {
   AVCodecContext* decoder = (AVCodecContext*) data;
-  avcodec_close(decoder);
-  avcodec_free_context(&decoder);
+  ffmpeg_static_avcodec_close(decoder);
+  ffmpeg_static_avcodec_free_context(&decoder);
 }
 
 void decodeExecute(napi_env env, void* data) {
@@ -235,12 +235,12 @@ void decodeExecute(napi_env env, void* data) {
 
   for ( auto it = c->packets.cbegin() ; it != c->packets.cend() ; it++ ) {
   bump:
-    ret = avcodec_send_packet(c->decoder, *it);
+    ret = ffmpeg_static_avcodec_send_packet(c->decoder, *it);
     switch (ret) {
       case AVERROR(EAGAIN):
-        // printf("Input is not accepted in the current state - user must read output with avcodec_receive_frame().\n");
-        frame = av_frame_alloc();
-        avcodec_receive_frame(c->decoder, frame);
+        // printf("Input is not accepted in the current state - user must read output with ffmpeg_static_avcodec_receive_frame().\n");
+        frame = ffmpeg_static_av_frame_alloc();
+        ffmpeg_static_avcodec_receive_frame(c->decoder, frame);
         c->frames.push_back(frame);
         goto bump;
       case AVERROR_EOF:
@@ -248,7 +248,7 @@ void decodeExecute(napi_env env, void* data) {
         c->errorMsg = "The decoder has been flushed, and no new packets can be sent to it.";
         return;
       case AVERROR(EINVAL):
-        if ((ret = avcodec_open2(c->decoder, c->decoder->codec, nullptr))) {
+        if ((ret = ffmpeg_static_avcodec_open2(c->decoder, c->decoder->codec, nullptr))) {
           c->status = BEAMCODER_ERROR_ALLOC_DECODER;
           c->errorMsg = avErrorMsg("Problem opening decoder: ", ret);
           return;
@@ -272,26 +272,26 @@ void decodeExecute(napi_env env, void* data) {
   if (c->decoder->hw_frames_ctx)
     frame_hw_pix_fmt = ((AVHWFramesContext*)c->decoder->hw_frames_ctx->data)->format;
 
-  frame = av_frame_alloc();
-  sw_frame = av_frame_alloc();
+  frame = ffmpeg_static_av_frame_alloc();
+  sw_frame = ffmpeg_static_av_frame_alloc();
   do {
-    ret = avcodec_receive_frame(c->decoder, frame);
+    ret = ffmpeg_static_avcodec_receive_frame(c->decoder, frame);
     if (ret == 0) {
       if (frame->format == frame_hw_pix_fmt) {
-        if ((ret = av_hwframe_transfer_data(sw_frame, frame, 0)) < 0) {
+        if ((ret = ffmpeg_static_av_hwframe_transfer_data(sw_frame, frame, 0)) < 0) {
           printf("Error transferring hw data to system memory\n");
         }
         c->frames.push_back(sw_frame);
-        av_frame_free(&frame);
+        ffmpeg_static_av_frame_free(&frame);
       } else
         c->frames.push_back(frame);
 
-      frame = av_frame_alloc();
-      sw_frame = av_frame_alloc();
+      frame = ffmpeg_static_av_frame_alloc();
+      sw_frame = ffmpeg_static_av_frame_alloc();
     }
   } while (ret == 0);
-  av_frame_free(&frame);
-  av_frame_free(&sw_frame);
+  ffmpeg_static_av_frame_free(&frame);
+  ffmpeg_static_av_frame_free(&sw_frame);
 
   c->totalTime = microTime(decodeStart);
 };

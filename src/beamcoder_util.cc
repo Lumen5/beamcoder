@@ -167,7 +167,7 @@ napi_value nop(napi_env env, napi_callback_info info) {
 char* avErrorMsg(const char* base, int avError) {
   char errMsg[AV_ERROR_MAX_STRING_SIZE];
   char* both;
-  int ret = av_strerror(avError, errMsg, AV_ERROR_MAX_STRING_SIZE);
+  int ret = ffmpeg_static_av_strerror(avError, errMsg, AV_ERROR_MAX_STRING_SIZE);
   if (ret < 0) {
     strcpy(errMsg, "Unable to create AV error string.");
   }
@@ -346,7 +346,7 @@ napi_status beam_get_rational(napi_env env, napi_value target, const char* name,
     status = napi_get_value_int32(env, element, &den);
     ACCEPT_STATUS(napi_number_expected);
   }
-  *value = av_make_q(num, den);
+  *value = ffmpeg_static_av_make_q(num, den);
   return napi_ok;
 }
 
@@ -528,7 +528,7 @@ napi_status fromAVClass(napi_env env, const AVClass* cls, napi_value* result) {
         PASS_STATUS;
       }
     }
-    option = av_opt_next(&cls, option);
+    option = ffmpeg_static_av_opt_next(&cls, option);
   }
   option = cls->option;
   while ((option != nullptr) && (option->name != nullptr)) {
@@ -540,7 +540,7 @@ napi_status fromAVClass(napi_env env, const AVClass* cls, napi_value* result) {
       if (type != napi_object) { // Assume badly described constant property
         // TODO work with bad params like https://github.com/FFmpeg/FFmpeg/blob/a0ac49e38ee1d1011c394d7be67d0f08b2281526/libavformat/chromaprint.c#L167
         //      parameter fp_format is missing option->unit
-        option = av_opt_next(&cls, option);
+        option = ffmpeg_static_av_opt_next(&cls, option);
         continue;
       }
       status = napi_get_named_property(env, opt, "consts", &consts);
@@ -552,7 +552,7 @@ napi_status fromAVClass(napi_env env, const AVClass* cls, napi_value* result) {
       status = napi_set_element(env, consts, constCount, element);
       PASS_STATUS;
     }
-    option = av_opt_next(&cls, option);
+    option = ffmpeg_static_av_opt_next(&cls, option);
   }
   status = napi_set_named_property(env, desc, "options", options);
   PASS_STATUS;
@@ -596,7 +596,7 @@ napi_status makeAVDictionary(napi_env env, napi_value options, AVDictionary** me
     status = napi_get_value_string_utf8(env, valueS, valueStr, strLen + 1, &strLen);
     PASS_STATUS;
 
-    ret = av_dict_set(&dict, keyStr, valueStr, 0);
+    ret = ffmpeg_static_av_dict_set(&dict, keyStr, valueStr, 0);
     free(keyStr);
     free(valueStr);
     if (ret < 0) {
@@ -630,7 +630,7 @@ napi_status fromContextPrivData(napi_env env, void *privData, napi_value* result
 
   status = napi_create_object(env, &optionsVal);
   PASS_STATUS;
-  while ((option = av_opt_next(privData, option))) {
+  while ((option = ffmpeg_static_av_opt_next(privData, option))) {
     switch (option->type) {
       case AV_OPT_TYPE_FLAGS:
         printf("fromPrivOptions: flags option %s: %s\n", option->name, "unmapped");
@@ -638,7 +638,7 @@ napi_status fromContextPrivData(napi_env env, void *privData, napi_value* result
         PASS_STATUS;
         break;
       case AV_OPT_TYPE_INT:
-        ret = av_opt_get_int(privData, option->name, 0, &iValue);
+        ret = ffmpeg_static_av_opt_get_int(privData, option->name, 0, &iValue);
         if (ret < 0) {
           return napi_number_expected;
         }
@@ -652,7 +652,7 @@ napi_status fromContextPrivData(napi_env env, void *privData, napi_value* result
           } else {
             data = (uint8_t *)option->name;
             prev = option;
-            option = av_opt_next(privData, option);
+            option = ffmpeg_static_av_opt_next(privData, option);
             while (option && (AV_OPT_TYPE_CONST == option->type)) {
               prev = option;
               if (option->default_val.i64 == iValue) {
@@ -661,7 +661,7 @@ napi_status fromContextPrivData(napi_env env, void *privData, napi_value* result
                 PASS_STATUS;
                 break;
               }
-              option = av_opt_next(privData, option);
+              option = ffmpeg_static_av_opt_next(privData, option);
             }
             option = prev;
           }
@@ -669,7 +669,7 @@ napi_status fromContextPrivData(napi_env env, void *privData, napi_value* result
         break;
       case AV_OPT_TYPE_INT64:
       case AV_OPT_TYPE_UINT64:
-        ret = av_opt_get_int(privData, option->name, 0, &iValue);
+        ret = ffmpeg_static_av_opt_get_int(privData, option->name, 0, &iValue);
         if (ret < 0) {
           return napi_number_expected;
         }
@@ -678,7 +678,7 @@ napi_status fromContextPrivData(napi_env env, void *privData, napi_value* result
         break;
       case AV_OPT_TYPE_DOUBLE:
       case AV_OPT_TYPE_FLOAT:
-        ret = av_opt_get_double(privData, option->name, 0, &dValue);
+        ret = ffmpeg_static_av_opt_get_double(privData, option->name, 0, &dValue);
         if (ret < 0) {
           return napi_number_expected;
         }
@@ -686,16 +686,16 @@ napi_status fromContextPrivData(napi_env env, void *privData, napi_value* result
         PASS_STATUS;
         break;
       case AV_OPT_TYPE_STRING:
-        ret = av_opt_get(privData, option->name, 0, &data);
+        ret = ffmpeg_static_av_opt_get(privData, option->name, 0, &data);
         if (ret < 0) {
           return napi_string_expected;
         }
         status = beam_set_string_utf8(env, optionsVal, option->name, const_cast<char*>((char*) data));
-        av_free(data);
+        ffmpeg_static_av_free(data);
         PASS_STATUS;
         break;
       case AV_OPT_TYPE_RATIONAL:
-        ret = av_opt_get_q(privData, option->name, 0, &qValue);
+        ret = ffmpeg_static_av_opt_get_q(privData, option->name, 0, &qValue);
         if (ret < 0) {
           return napi_object_expected;
         }
@@ -726,23 +726,23 @@ napi_status fromContextPrivData(napi_env env, void *privData, napi_value* result
       case AV_OPT_TYPE_IMAGE_SIZE: ///< offset must point to two consecutive integers
         sizeData = (imageSizeData *)((uint8_t*)privData + option->offset);
         // printf("fromPrivOptions: image size option %s: %dx%d\n", option->name, sizeData->x, sizeData->y);
-        status = beam_set_rational(env, optionsVal, option->name, av_make_q(sizeData->x, sizeData->y));
+        status = beam_set_rational(env, optionsVal, option->name, ffmpeg_static_av_make_q(sizeData->x, sizeData->y));
         PASS_STATUS;
         break;
       case AV_OPT_TYPE_PIXEL_FMT:
-        ret = av_opt_get_pixel_fmt(privData, option->name, 0, &pixFmt);
+        ret = ffmpeg_static_av_opt_get_pixel_fmt(privData, option->name, 0, &pixFmt);
         if (ret < 0) {
           return napi_number_expected;
         }
-        status = beam_set_string_utf8(env, optionsVal, option->name, av_get_pix_fmt_name(pixFmt));
+        status = beam_set_string_utf8(env, optionsVal, option->name, ffmpeg_static_av_get_pix_fmt_name(pixFmt));
         PASS_STATUS;
         break;
       case AV_OPT_TYPE_SAMPLE_FMT:
-        ret = av_opt_get_sample_fmt(privData, option->name, 0, &sampleFmt);
+        ret = ffmpeg_static_av_opt_get_sample_fmt(privData, option->name, 0, &sampleFmt);
         if (ret < 0) {
           return napi_number_expected;
         }
-        status = beam_set_string_utf8(env, optionsVal, option->name, av_get_sample_fmt_name(sampleFmt));
+        status = beam_set_string_utf8(env, optionsVal, option->name, ffmpeg_static_av_get_sample_fmt_name(sampleFmt));
         PASS_STATUS;
         break;
       case AV_OPT_TYPE_VIDEO_RATE: ///< offset must point to AVRational
@@ -762,17 +762,17 @@ napi_status fromContextPrivData(napi_env env, void *privData, napi_value* result
         PASS_STATUS;
         break;
       case AV_OPT_TYPE_CHANNEL_LAYOUT:
-        ret = av_opt_get_channel_layout(privData, option->name, 0, &iValue);
+        ret = ffmpeg_static_av_opt_get_channel_layout(privData, option->name, 0, &iValue);
         if (ret < 0) {
           return napi_number_expected;
         }
-        av_get_channel_layout_string(chanLayStr, 64, 0, iValue);
+        ffmpeg_static_av_get_channel_layout_string(chanLayStr, 64, 0, iValue);
         // printf("fromPrivOptions: channel layout option %s: %lli - %s\n", option->name, iValue, chanLayStr);
         status = beam_set_string_utf8(env, optionsVal, option->name, chanLayStr);
         PASS_STATUS;
         break;
       case AV_OPT_TYPE_BOOL:
-        ret = av_opt_get_int(privData, option->name, 0, &iValue);
+        ret = ffmpeg_static_av_opt_get_int(privData, option->name, 0, &iValue);
         if (ret < 0) {
           return napi_boolean_expected;
         }
@@ -828,7 +828,7 @@ napi_status toContextPrivData(napi_env env, napi_value params, void* priv_data) 
       sValue = (char*) malloc(sizeof(char) * (sLen + 1));
       status = napi_get_value_string_utf8(env, element, sValue, sLen + 1, &sLen);
       PASS_STATUS;
-      option = av_opt_find(priv_data, sValue, nullptr, 0, 0);
+      option = ffmpeg_static_av_opt_find(priv_data, sValue, nullptr, 0, 0);
       if (option != nullptr) {
         if (option->flags & AV_OPT_FLAG_READONLY) { continue; }
         status = napi_get_named_property(env, params, sValue, &element);
@@ -839,7 +839,7 @@ napi_status toContextPrivData(napi_env env, napi_value params, void* priv_data) 
           case napi_boolean:
             status = napi_get_value_bool(env, element, &flag);
             PASS_STATUS;
-            ret = av_opt_set_int(priv_data, sValue, flag, 0);
+            ret = ffmpeg_static_av_opt_set_int(priv_data, sValue, flag, 0);
             if (ret < 0) printf("DEBUG: Unable to set %s with a boolean value.\n", sValue);
             break;
           case napi_number:
@@ -847,13 +847,13 @@ napi_status toContextPrivData(napi_env env, napi_value params, void* priv_data) 
                 (option->type == AV_OPT_TYPE_FLOAT)) {
               status = napi_get_value_double(env, element, &dValue);
               PASS_STATUS;
-              ret = av_opt_set_double(priv_data, sValue, dValue, 0);
+              ret = ffmpeg_static_av_opt_set_double(priv_data, sValue, dValue, 0);
               if (ret < 0) printf("DEBUG: Unable to set %s with a double value %f.\n", sValue, dValue);
               break;
             }
             status = napi_get_value_int64(env, element, &iValue);
             PASS_STATUS;
-            ret = av_opt_set_int(priv_data, sValue, iValue, 0);
+            ret = ffmpeg_static_av_opt_set_int(priv_data, sValue, iValue, 0);
             if (ret < 0) printf("DEBUG: Unable to set %s with an integer value %" PRId64 ": %s.\n",
               sValue, iValue, avErrorMsg("", ret));
             break;
@@ -864,7 +864,7 @@ napi_status toContextPrivData(napi_env env, napi_value params, void* priv_data) 
             PASS_STATUS;
             status = napi_get_value_string_utf8(env, element, strProp, sLen + 1, &sLen);
             PASS_STATUS;
-            ret = av_opt_set(priv_data, sValue, strProp, 0);
+            ret = ffmpeg_static_av_opt_set(priv_data, sValue, strProp, 0);
             free(strProp);
             if (ret < 0) printf("DEBUG: Unable to set %s with a string value %s.\n", sValue, strProp);
             break;
@@ -893,7 +893,7 @@ napi_status toContextPrivData(napi_env env, napi_value params, void* priv_data) 
               }
               status = napi_get_value_int32(env, subel, &qValue.den);
               PASS_STATUS;
-              ret = av_opt_set_q(priv_data, sValue, qValue, 0);
+              ret = ffmpeg_static_av_opt_set_q(priv_data, sValue, qValue, 0);
               if (ret < 0) {
                 printf("DEBUG: Failed to set rational property %s.\n", sValue);
               }

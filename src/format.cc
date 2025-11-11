@@ -161,7 +161,7 @@ napi_status getIOFormatCodecTag(napi_env env, AVInputFormat* format, napi_value*
       PASS_STATUS;
       status = beam_set_uint32(env, tagObj, "id", tag[0]);
       PASS_STATUS;
-      av_fourcc_make_string(fourcc, tag[1]);
+      ffmpeg_static_av_fourcc_make_string(fourcc, tag[1]);
       if (strchr(fourcc, '[')) { // not a recognised tag
         status = beam_set_uint32(env, tagObj, "tag", tag[1]);
         PASS_STATUS;
@@ -403,7 +403,7 @@ napi_value getOFormatAudioCodec(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
 
   status = napi_create_string_utf8(env,
-    (char*) avcodec_get_name(oformat->audio_codec),
+    (char*) ffmpeg_static_avcodec_get_name(oformat->audio_codec),
     NAPI_AUTO_LENGTH, &result);
   CHECK_STATUS;
 
@@ -419,7 +419,7 @@ napi_value getOFormatVideoCodec(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
 
   status = napi_create_string_utf8(env,
-    (char*) avcodec_get_name(oformat->video_codec),
+    (char*) ffmpeg_static_avcodec_get_name(oformat->video_codec),
     NAPI_AUTO_LENGTH, &result);
   CHECK_STATUS;
 
@@ -435,7 +435,7 @@ napi_value getOFormatSubtitleCodec(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
 
   status = napi_create_string_utf8(env,
-    (char*) avcodec_get_name(oformat->subtitle_codec),
+    (char*) ffmpeg_static_avcodec_get_name(oformat->subtitle_codec),
     NAPI_AUTO_LENGTH, &result);
   CHECK_STATUS;
 
@@ -451,14 +451,14 @@ napi_value muxers(napi_env env, napi_callback_info info) {
   status = napi_create_object(env, &result);
   CHECK_STATUS;
 
-  oformat = av_muxer_iterate(&opaque);
+  oformat = ffmpeg_static_av_muxer_iterate(&opaque);
   while ( oformat != nullptr ) {
     status = fromAVOutputFormat(env, oformat, &muxer);
     CHECK_STATUS;
     status = napi_set_named_property(env, result, oformat->name, muxer);
     CHECK_STATUS;
 
-    oformat = av_muxer_iterate(&opaque);
+    oformat = ffmpeg_static_av_muxer_iterate(&opaque);
   }
 
   return result;
@@ -473,14 +473,14 @@ napi_value demuxers(napi_env env, napi_callback_info info) {
   status = napi_create_object(env, &result);
   CHECK_STATUS;
 
-  iformat = av_demuxer_iterate(&opaque);
+  iformat = ffmpeg_static_av_demuxer_iterate(&opaque);
   while ( iformat != nullptr ) {
     status = fromAVInputFormat(env, iformat, &demuxer);
     CHECK_STATUS;
     status = napi_set_named_property(env, result, iformat->name, demuxer);
     CHECK_STATUS;
 
-    iformat = av_demuxer_iterate(&opaque);
+    iformat = ffmpeg_static_av_demuxer_iterate(&opaque);
   }
 
   return result;
@@ -513,12 +513,12 @@ napi_value guessFormat(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, args[0], testName, strLen + 1, &strLen);
   CHECK_STATUS;
 
-  oformat = av_guess_format((const char*) testName, nullptr, nullptr);
+  oformat = ffmpeg_static_av_guess_format((const char*) testName, nullptr, nullptr);
   if (oformat == nullptr) {
-    oformat = av_guess_format(nullptr, (const char*) testName, nullptr);
+    oformat = ffmpeg_static_av_guess_format(nullptr, (const char*) testName, nullptr);
   }
   if (oformat == nullptr) {
-    oformat = av_guess_format(nullptr, nullptr, (const char*) testName);
+    oformat = ffmpeg_static_av_guess_format(nullptr, nullptr, (const char*) testName);
   }
   if (oformat == nullptr) {
     status = napi_get_null(env, &result);
@@ -660,7 +660,7 @@ napi_value setFmtCtxOFormat(napi_env env, napi_callback_info info) {
   if ((type == napi_null) || (type == napi_undefined)) {
     fmtCtx->oformat = nullptr;
     if (fmtCtx->iformat == nullptr) {
-      av_freep(&fmtCtx->priv_data);
+      ffmpeg_static_av_freep(&fmtCtx->priv_data);
     }
     goto over;
   }
@@ -670,8 +670,8 @@ napi_value setFmtCtxOFormat(napi_env env, napi_callback_info info) {
     name = (char*) malloc(sizeof(char) * (strLen + 1));
     status = napi_get_value_string_utf8(env, args[0], name, strLen + 1, &strLen);
     CHECK_STATUS;
-    while ((fmt = av_muxer_iterate(&i))) {
-      if (av_match_name(name, fmt->name)) {
+    while ((fmt = ffmpeg_static_av_muxer_iterate(&i))) {
+      if (ffmpeg_static_av_match_name(name, fmt->name)) {
         fmtCtx->oformat = (AVOutputFormat*) fmt;
         found = true;
         break;
@@ -702,13 +702,13 @@ done:
     NAPI_THROW_ERROR("Unable to find and/or set output format.");
   }
   if (fmtCtx->oformat->priv_data_size > 0) {
-    av_freep(&fmtCtx->priv_data);
-    if (!(fmtCtx->priv_data = av_mallocz(fmtCtx->oformat->priv_data_size))) {
+    ffmpeg_static_av_freep(&fmtCtx->priv_data);
+    if (!(fmtCtx->priv_data = ffmpeg_static_av_mallocz(fmtCtx->oformat->priv_data_size))) {
       NAPI_THROW_ERROR("Failed to allocate memory for private data.");
     }
     if (fmtCtx->oformat->priv_class) {
       *(const AVClass **) fmtCtx->priv_data = fmtCtx->oformat->priv_class;
-      av_opt_set_defaults(fmtCtx->priv_data);
+      ffmpeg_static_av_opt_set_defaults(fmtCtx->priv_data);
     }
   }
 
@@ -761,7 +761,7 @@ napi_value setFmtCtxIFormat(napi_env env, napi_callback_info info) {
   if ((type == napi_null) || (type == napi_undefined)) {
     fmtCtx->iformat = nullptr;
     if (fmtCtx->oformat == nullptr) {
-      av_freep(&fmtCtx->priv_data);
+      ffmpeg_static_av_freep(&fmtCtx->priv_data);
     }
     goto over;
   }
@@ -771,8 +771,8 @@ napi_value setFmtCtxIFormat(napi_env env, napi_callback_info info) {
     name = (char*) malloc(sizeof(char) * (strLen + 1));
     status = napi_get_value_string_utf8(env, args[0], name, strLen + 1, &strLen);
     CHECK_STATUS;
-    while ((fmt = av_demuxer_iterate(&i))) {
-      if (av_match_name(name, fmt->name)) {
+    while ((fmt = ffmpeg_static_av_demuxer_iterate(&i))) {
+      if (ffmpeg_static_av_match_name(name, fmt->name)) {
         fmtCtx->iformat = (AVInputFormat*) fmt;
         found = true;
         break;
@@ -803,13 +803,13 @@ done:
     NAPI_THROW_ERROR("Unable to find and/or set input format.");
   }
   if (fmtCtx->iformat->priv_data_size > 0) {
-    av_freep(&fmtCtx->priv_data);
-    if (!(fmtCtx->priv_data = av_mallocz(fmtCtx->iformat->priv_data_size))) {
+    ffmpeg_static_av_freep(&fmtCtx->priv_data);
+    if (!(fmtCtx->priv_data = ffmpeg_static_av_mallocz(fmtCtx->iformat->priv_data_size))) {
       NAPI_THROW_ERROR("Failed to allocate memory for private data.");
     }
     if (fmtCtx->iformat->priv_class) {
       *(const AVClass **) fmtCtx->priv_data = fmtCtx->iformat->priv_class;
-      av_opt_set_defaults(fmtCtx->priv_data);
+      ffmpeg_static_av_opt_set_defaults(fmtCtx->priv_data);
     }
   }
 
@@ -992,7 +992,7 @@ napi_value setFmtCtxURL(napi_env env, napi_callback_info info) {
   }
   status = napi_get_value_string_utf8(env, args[0], nullptr, 0, &strLen);
   CHECK_STATUS;
-  url = (char*) av_malloc(sizeof(char) * (strLen + 1));
+  url = (char*) ffmpeg_static_av_malloc(sizeof(char) * (strLen + 1));
   status = napi_get_value_string_utf8(env, args[0], url, strLen + 1, &strLen);
   CHECK_STATUS;
 
@@ -1212,7 +1212,7 @@ napi_value getFmtCtxFlags(napi_env env, napi_callback_info info) {
   // Do not buffer frames when possible
   status = beam_set_bool(env, result, "NOBUFFER", fmtCtx->flags & AVFMT_FLAG_NOBUFFER);
   CHECK_STATUS;
-  // The caller has supplied a custom AVIOContext, don't avio_close() it.
+  // The caller has supplied a custom AVIOContext, don't ffmpeg_static_avio_close() it.
   status = beam_set_bool(env, result, "CUSTOM_IO", fmtCtx->flags & AVFMT_FLAG_CUSTOM_IO);
   CHECK_STATUS;
   // Discard frames marked corrupted
@@ -1305,7 +1305,7 @@ napi_value setFmtCtxFlags(napi_env env, napi_callback_info info) {
   if (present) { fmtCtx->flags = (flag) ?
     fmtCtx->flags | AVFMT_FLAG_NOBUFFER :
     fmtCtx->flags & ~AVFMT_FLAG_NOBUFFER; }
-  // The caller has supplied a custom AVIOContext, don't avio_close() it.
+  // The caller has supplied a custom AVIOContext, don't ffmpeg_static_avio_close() it.
   status = beam_get_bool(env, args[0], "CUSTOM_IO", &present, &flag);
   CHECK_STATUS;
   if (present) { fmtCtx->flags = (flag) ?
@@ -1406,7 +1406,7 @@ napi_value setFmtCtxKey(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
   if (type == napi_null) {
     if (fmtCtx->keylen > 0) { // Tidy up old buffers
-      av_freep(&fmtCtx->key);
+      ffmpeg_static_av_freep(&fmtCtx->key);
     }
     fmtCtx->keylen = 0;
     goto done;
@@ -1437,10 +1437,10 @@ napi_value setFmtCtxKey(napi_env env, napi_callback_info info) {
   status = napi_get_buffer_info(env, args[0], (void**) &data, &dataLen);
   CHECK_STATUS;
   if (fmtCtx->keylen > 0) { // Tidy up old buffers
-    av_freep(&fmtCtx->key);
+    ffmpeg_static_av_freep(&fmtCtx->key);
     fmtCtx->keylen = 0;
   }
-  fmtCtx->key = (uint8_t*) av_mallocz(dataLen + AV_INPUT_BUFFER_PADDING_SIZE);
+  fmtCtx->key = (uint8_t*) ffmpeg_static_av_mallocz(dataLen + AV_INPUT_BUFFER_PADDING_SIZE);
   fmtCtx->keylen = dataLen;
   memcpy((void*) fmtCtx->key, data, dataLen);
 
@@ -1480,7 +1480,7 @@ napi_value getFmtCtxPrograms(napi_env env, napi_callback_info info) {
     CHECK_STATUS;
     status = napi_create_object(env, &metadata);
     CHECK_STATUS;
-    while ((tag = av_dict_get(program->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
+    while ((tag = ffmpeg_static_av_dict_get(program->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
       status = beam_set_string_utf8(env, metadata, tag->key, tag->value);
       CHECK_STATUS;
     }
@@ -1542,11 +1542,11 @@ napi_value getFmtCtxPrograms(napi_env env, napi_callback_info info) {
   }
   status = napi_get_undefined(env, &result);
   CHECK_STATUS;
-  programs = (AVProgram**) av_mallocz(sizeof(AVProgram*) * progCount);
+  programs = (AVProgram**) ffmpeg_static_av_mallocz(sizeof(AVProgram*) * progCount);
   for ( uint32_t x = 0 ; x < progCount ; x++ ) {
     status = napi_get_element(env, args[0], x, &element);
     CHECK_BAIL;
-    program = (AVProgram*) av_mallocz(sizeof(AVProgram));
+    program = (AVProgram*) ffmpeg_static_av_mallocz(sizeof(AVProgram));
     status = beam_get_int32(env, element, "id", &program->id);
     CHECK_BAIL;
     status = napi_typeof(env, element, &type);
@@ -1561,11 +1561,11 @@ napi_value getFmtCtxPrograms(napi_env env, napi_callback_info info) {
   }
 
   for ( int i = ctx->nb_programs - 1; i >= 0; i--) {
-    av_dict_free(&ctx->programs[i]->metadata);
-    av_freep(&ctx->programs[i]->stream_index);
-    av_freep(&ctx->programs[i]);
+    ffmpeg_static_av_dict_free(&ctx->programs[i]->metadata);
+    ffmpeg_static_av_freep(&ctx->programs[i]->stream_index);
+    ffmpeg_static_av_freep(&ctx->programs[i]);
   }
-  av_freep(&ctx->programs);
+  ffmpeg_static_av_freep(&ctx->programs);
 
   ctx->programs = programs;
   ctx->nb_programs = progCount;
@@ -1573,11 +1573,11 @@ napi_value getFmtCtxPrograms(napi_env env, napi_callback_info info) {
   return result;
 bail:
   for ( int i = progCount - 1; i >= 0; i--) {
-    av_dict_free(&programs[i]->metadata);
-    av_freep(&programs->stream_index);
-    av_freep(&programs[i]);
+    ffmpeg_static_av_dict_free(&programs[i]->metadata);
+    ffmpeg_static_av_freep(&programs->stream_index);
+    ffmpeg_static_av_freep(&programs[i]);
   }
-  av_freep(&ctx->programs);
+  ffmpeg_static_av_freep(&ctx->programs);
   return result;
 } */
 
@@ -1759,7 +1759,7 @@ napi_value getFmtCtxMetadata(napi_env env, napi_callback_info info) {
   status = napi_create_object(env, &result);
   CHECK_STATUS;
 
-  while ((tag = av_dict_get(fmtCtx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
+  while ((tag = ffmpeg_static_av_dict_get(fmtCtx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
     status = beam_set_string_utf8(env, result, tag->key, tag->value);
     CHECK_STATUS;
   }
@@ -2417,13 +2417,13 @@ napi_value getFmtCtxAvioFlags(napi_env env, napi_callback_info info) {
 
   status = napi_create_object(env, &result);
   CHECK_STATUS;
-  status = beam_set_bool(env, result, "READ", fmtCtx->avio_flags & AVIO_FLAG_READ);
+  status = beam_set_bool(env, result, "READ", fmtCtx->ffmpeg_static_avio_flags & AVIO_FLAG_READ);
   CHECK_STATUS;
-  status = beam_set_bool(env, result, "WRITE", fmtCtx->avio_flags & AVIO_FLAG_WRITE);
+  status = beam_set_bool(env, result, "WRITE", fmtCtx->ffmpeg_static_avio_flags & AVIO_FLAG_WRITE);
   CHECK_STATUS;
-  status = beam_set_bool(env, result, "NONBLOCK", fmtCtx->avio_flags & AVIO_FLAG_NONBLOCK);
+  status = beam_set_bool(env, result, "NONBLOCK", fmtCtx->ffmpeg_static_avio_flags & AVIO_FLAG_NONBLOCK);
   CHECK_STATUS;
-  status = beam_set_bool(env, result, "DIRECT", fmtCtx->avio_flags & AVIO_FLAG_DIRECT);
+  status = beam_set_bool(env, result, "DIRECT", fmtCtx->ffmpeg_static_avio_flags & AVIO_FLAG_DIRECT);
   CHECK_STATUS;
 
   return result;
@@ -2442,33 +2442,33 @@ napi_value setFmtCtxAvioFlags(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, &argc, args, nullptr, (void**) &fmtCtx);
   CHECK_STATUS;
   if (argc != 1) {
-    NAPI_THROW_ERROR("Format context avio_flags must be set with a value.");
+    NAPI_THROW_ERROR("Format context ffmpeg_static_avio_flags must be set with a value.");
   }
   status = napi_typeof(env, args[0], &type);
   CHECK_STATUS;
   if (type != napi_object) {
-    NAPI_THROW_ERROR("Format context avio_flags must be set with an object of Boolean values.");
+    NAPI_THROW_ERROR("Format context ffmpeg_static_avio_flags must be set with an object of Boolean values.");
   }
   status = beam_get_bool(env, args[0], "READ", &present, &flag);
   CHECK_STATUS;
-  if (present) { fmtCtx->avio_flags = (flag) ?
-    fmtCtx->avio_flags | AVIO_FLAG_READ :
-    fmtCtx->avio_flags & ~AVIO_FLAG_READ; }
+  if (present) { fmtCtx->ffmpeg_static_avio_flags = (flag) ?
+    fmtCtx->ffmpeg_static_avio_flags | AVIO_FLAG_READ :
+    fmtCtx->ffmpeg_static_avio_flags & ~AVIO_FLAG_READ; }
   status = beam_get_bool(env, args[0], "WRITE", &present, &flag);
   CHECK_STATUS;
-  if (present) { fmtCtx->avio_flags = (flag) ?
-    fmtCtx->avio_flags | AVIO_FLAG_WRITE :
-    fmtCtx->avio_flags & ~AVIO_FLAG_WRITE; }
+  if (present) { fmtCtx->ffmpeg_static_avio_flags = (flag) ?
+    fmtCtx->ffmpeg_static_avio_flags | AVIO_FLAG_WRITE :
+    fmtCtx->ffmpeg_static_avio_flags & ~AVIO_FLAG_WRITE; }
   status = beam_get_bool(env, args[0], "NONBLOCK", &present, &flag);
   CHECK_STATUS;
-  if (present) { fmtCtx->avio_flags = (flag) ?
-    fmtCtx->avio_flags | AVIO_FLAG_NONBLOCK :
-    fmtCtx->avio_flags & ~AVIO_FLAG_NONBLOCK; }
+  if (present) { fmtCtx->ffmpeg_static_avio_flags = (flag) ?
+    fmtCtx->ffmpeg_static_avio_flags | AVIO_FLAG_NONBLOCK :
+    fmtCtx->ffmpeg_static_avio_flags & ~AVIO_FLAG_NONBLOCK; }
   status = beam_get_bool(env, args[0], "DIRECT", &present, &flag);
   CHECK_STATUS;
-  if (present) { fmtCtx->avio_flags = (flag) ?
-    fmtCtx->avio_flags | AVIO_FLAG_DIRECT :
-    fmtCtx->avio_flags & ~AVIO_FLAG_DIRECT; }
+  if (present) { fmtCtx->ffmpeg_static_avio_flags = (flag) ?
+    fmtCtx->ffmpeg_static_avio_flags | AVIO_FLAG_DIRECT :
+    fmtCtx->ffmpeg_static_avio_flags & ~AVIO_FLAG_DIRECT; }
 
   status = napi_get_undefined(env, &result);
   CHECK_STATUS;
@@ -2760,7 +2760,7 @@ napi_value setFmtCtxCodecWhitelist(napi_env env, napi_callback_info info) {
 
   if ((type == napi_null) || (type == napi_undefined)) {
     if (fmtCtx->codec_whitelist != nullptr) {
-      av_freep(&fmtCtx->codec_whitelist);
+      ffmpeg_static_av_freep(&fmtCtx->codec_whitelist);
     }
     goto done;
   }
@@ -2769,12 +2769,12 @@ napi_value setFmtCtxCodecWhitelist(napi_env env, napi_callback_info info) {
   }
   status = napi_get_value_string_utf8(env, args[0], nullptr, 0, &strLen);
   CHECK_STATUS;
-  list = (char*) av_mallocz(sizeof(char) * (strLen + 1));
+  list = (char*) ffmpeg_static_av_mallocz(sizeof(char) * (strLen + 1));
   status = napi_get_value_string_utf8(env, args[0], list, strLen + 1, &strLen);
   CHECK_STATUS;
 
   if (fmtCtx->codec_whitelist != nullptr) {
-    av_freep(&fmtCtx->codec_whitelist);
+    ffmpeg_static_av_freep(&fmtCtx->codec_whitelist);
   }
   fmtCtx->codec_whitelist = list;
 
@@ -2825,7 +2825,7 @@ napi_value setFmtCtxFmtWhitelist(napi_env env, napi_callback_info info) {
 
   if ((type == napi_null) || (type == napi_undefined)) {
     if (fmtCtx->format_whitelist != nullptr) {
-      av_freep(&fmtCtx->format_whitelist);
+      ffmpeg_static_av_freep(&fmtCtx->format_whitelist);
     }
     goto done;
   }
@@ -2834,12 +2834,12 @@ napi_value setFmtCtxFmtWhitelist(napi_env env, napi_callback_info info) {
   }
   status = napi_get_value_string_utf8(env, args[0], nullptr, 0, &strLen);
   CHECK_STATUS;
-  list = (char*) av_mallocz(sizeof(char) * (strLen + 1));
+  list = (char*) ffmpeg_static_av_mallocz(sizeof(char) * (strLen + 1));
   status = napi_get_value_string_utf8(env, args[0], list, strLen + 1, &strLen);
   CHECK_STATUS;
 
   if (fmtCtx->format_whitelist != nullptr) {
-    av_freep(&fmtCtx->format_whitelist);
+    ffmpeg_static_av_freep(&fmtCtx->format_whitelist);
   }
   fmtCtx->format_whitelist = list;
 
@@ -2890,7 +2890,7 @@ napi_value setFmtCtxProtWhitelist(napi_env env, napi_callback_info info) {
 
   if ((type == napi_null) || (type == napi_undefined)) {
     if (fmtCtx->protocol_whitelist != nullptr) {
-      av_freep(&fmtCtx->protocol_whitelist);
+      ffmpeg_static_av_freep(&fmtCtx->protocol_whitelist);
     }
     goto done;
   }
@@ -2899,12 +2899,12 @@ napi_value setFmtCtxProtWhitelist(napi_env env, napi_callback_info info) {
   }
   status = napi_get_value_string_utf8(env, args[0], nullptr, 0, &strLen);
   CHECK_STATUS;
-  list = (char*) av_mallocz(sizeof(char) * (strLen + 1));
+  list = (char*) ffmpeg_static_av_mallocz(sizeof(char) * (strLen + 1));
   status = napi_get_value_string_utf8(env, args[0], list, strLen + 1, &strLen);
   CHECK_STATUS;
 
   if (fmtCtx->protocol_whitelist != nullptr) {
-    av_freep(&fmtCtx->protocol_whitelist);
+    ffmpeg_static_av_freep(&fmtCtx->protocol_whitelist);
   }
   fmtCtx->protocol_whitelist = list;
 
@@ -2955,7 +2955,7 @@ napi_value setFmtCtxProtBlacklist(napi_env env, napi_callback_info info) {
 
   if ((type == napi_null) || (type == napi_undefined)) {
     if (fmtCtx->protocol_blacklist != nullptr) {
-      av_freep(&fmtCtx->protocol_blacklist);
+      ffmpeg_static_av_freep(&fmtCtx->protocol_blacklist);
     }
     goto done;
   }
@@ -2964,12 +2964,12 @@ napi_value setFmtCtxProtBlacklist(napi_env env, napi_callback_info info) {
   }
   status = napi_get_value_string_utf8(env, args[0], nullptr, 0, &strLen);
   CHECK_STATUS;
-  list = (char*) av_mallocz(sizeof(char) * (strLen + 1));
+  list = (char*) ffmpeg_static_av_mallocz(sizeof(char) * (strLen + 1));
   status = napi_get_value_string_utf8(env, args[0], list, strLen + 1, &strLen);
   CHECK_STATUS;
 
   if (fmtCtx->protocol_blacklist != nullptr) {
-    av_freep(&fmtCtx->protocol_blacklist);
+    ffmpeg_static_av_freep(&fmtCtx->protocol_blacklist);
   }
   fmtCtx->protocol_blacklist = list;
 
@@ -3114,7 +3114,7 @@ napi_value setFmtCtxDumpSep(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
   if ((type == napi_null) || (type == napi_undefined)) {
     if (fmtCtx->dump_separator != nullptr) {
-      av_freep(&fmtCtx->dump_separator);
+      ffmpeg_static_av_freep(&fmtCtx->dump_separator);
     }
     fmtCtx->dump_separator = nullptr;
     goto done;
@@ -3124,12 +3124,12 @@ napi_value setFmtCtxDumpSep(napi_env env, napi_callback_info info) {
   }
   status = napi_get_value_string_utf8(env, args[0], nullptr, 0, &strLen);
   CHECK_STATUS;
-  dumpy = (uint8_t*) av_malloc(sizeof(char) * (strLen + 1));
+  dumpy = (uint8_t*) ffmpeg_static_av_malloc(sizeof(char) * (strLen + 1));
   status = napi_get_value_string_utf8(env, args[0], (char*) dumpy, strLen + 1, &strLen);
   CHECK_STATUS;
 
   if (fmtCtx->dump_separator != nullptr) {
-    av_freep(&fmtCtx->dump_separator);
+    ffmpeg_static_av_freep(&fmtCtx->dump_separator);
   }
   fmtCtx->dump_separator = dumpy;
 
@@ -3314,7 +3314,7 @@ napi_value makeFormat(napi_env env, napi_callback_info info) {
   napi_value result, global, jsObject, assign, jsJSON, jsParse;
   napi_valuetype type;
   bool isArray, deleted;
-  AVFormatContext* fmtCtx = avformat_alloc_context();
+  AVFormatContext* fmtCtx = ffmpeg_static_avformat_alloc_context();
 
   status = napi_get_global(env, &global);
   CHECK_STATUS;
@@ -3463,7 +3463,7 @@ napi_value formatToJSON(napi_env env, napi_callback_info info) {
   DECLARE_GETTER3("max_chunk_duration", fmtCtx->max_chunk_duration > 0, getFmtCtxMaxChunkDur, fmtCtx);
   DECLARE_GETTER3("max_chunk_size", fmtCtx->max_chunk_size > 0, getFmtCtxMaxChunkSize, fmtCtx);
   DECLARE_GETTER3("use_wallclock_as_timestamps", fmtCtx->use_wallclock_as_timestamps != 0, getFmtCtxUseWallclock, fmtCtx);
-  DECLARE_GETTER3("avio_flags", fmtCtx->avio_flags > 0, getFmtCtxAvioFlags, fmtCtx);
+  DECLARE_GETTER3("ffmpeg_static_avio_flags", fmtCtx->ffmpeg_static_avio_flags > 0, getFmtCtxAvioFlags, fmtCtx);
   DECLARE_GETTER3("duration_estimation_method", fmtCtx->duration_estimation_method != AVFMT_DURATION_FROM_PTS, getFmtCtxDurEstMethod, fmtCtx);
   DECLARE_GETTER3("skip_initial_bytes", fmtCtx->skip_initial_bytes > 0, getFmtCtxSkipInitBytes, fmtCtx);
   DECLARE_GETTER3("correct_ts_overflow", fmtCtx->correct_ts_overflow != 1, getFmtCtxCorrectTsOf, fmtCtx);
@@ -3615,7 +3615,7 @@ napi_status fromAVFormatContext(napi_env env, AVFormatContext* fmtCtx,
         isMuxer ? nullptr : getFmtCtxUseWallclock,
         isMuxer ? failSetter : setFmtCtxUseWallclock, nullptr,
         isMuxer ? napi_default : (napi_property_attributes) (napi_writable | napi_enumerable), fmtCtx },
-      { "avio_flags", nullptr, nullptr,
+      { "ffmpeg_static_avio_flags", nullptr, nullptr,
         isMuxer ? nullptr : getFmtCtxAvioFlags,
         isMuxer ? failSetter : setFmtCtxAvioFlags, nullptr,
         isMuxer ? napi_default : (napi_property_attributes) (napi_writable | napi_enumerable), fmtCtx },
@@ -3771,7 +3771,7 @@ napi_status fromAVFormatContext(napi_env env, AVFormatContext* fmtCtx,
         (napi_property_attributes) (napi_writable | napi_enumerable), fmtCtx },
       { "use_wallclock_as_timestamps", nullptr, nullptr, getFmtCtxUseWallclock, setFmtCtxUseWallclock, nullptr,
         (napi_property_attributes) (napi_writable | napi_enumerable), fmtCtx },
-      { "avio_flags", nullptr, nullptr, getFmtCtxAvioFlags, setFmtCtxAvioFlags, nullptr,
+      { "ffmpeg_static_avio_flags", nullptr, nullptr, getFmtCtxAvioFlags, setFmtCtxAvioFlags, nullptr,
         (napi_property_attributes) (napi_writable | napi_enumerable), fmtCtx },
       { "duration_estimation_method", nullptr, nullptr, getFmtCtxDurEstMethod, nop, nullptr,
         (napi_property_attributes) (napi_writable | napi_enumerable), fmtCtx },
@@ -3838,9 +3838,9 @@ void formatContextFinalizer(napi_env env, void* data, void* hint) {
     fc = fmtRef->fmtCtx;
     if (fc->pb != nullptr) {
       if (adaptor)
-        avio_context_free(&fc->pb);
+        ffmpeg_static_avio_context_free(&fc->pb);
       else {
-        ret = avio_closep(&fc->pb);
+        ret = ffmpeg_static_avio_closep(&fc->pb);
         if (ret < 0) {
           printf("DEBUG: For url '%s', %s", (fc->url != nullptr) ? fc->url : "unknown",
             avErrorMsg("error closing IO: ", ret));
@@ -3849,25 +3849,25 @@ void formatContextFinalizer(napi_env env, void* data, void* hint) {
     }
 
     if (fc->iformat != nullptr) {
-      avformat_close_input(&fc);
+      ffmpeg_static_avformat_close_input(&fc);
     } else {
       // FIXME this is segfaulting ... why
       /* if (fc->codec_whitelist != nullptr) {
-        av_freep(fc->codec_whitelist);
+        ffmpeg_static_av_freep(fc->codec_whitelist);
       }
       if (fc->format_whitelist != nullptr) {
-        av_freep(fc->format_whitelist);
+        ffmpeg_static_av_freep(fc->format_whitelist);
       }
       if (fc->protocol_whitelist != nullptr) {
-        av_freep(fc->protocol_whitelist);
+        ffmpeg_static_av_freep(fc->protocol_whitelist);
       }
       if (fc->protocol_blacklist != nullptr) {
-        av_freep(fc->protocol_blacklist);
+        ffmpeg_static_av_freep(fc->protocol_blacklist);
       } */
     }
 
     if (adaptor != nullptr) // crashes otherwise...
-      avformat_free_context(fc);
+      ffmpeg_static_avformat_free_context(fc);
   }
 
   delete fmtRef;
@@ -3933,7 +3933,7 @@ napi_value newStream(napi_env env, napi_callback_info info) {
       status = napi_get_value_external(env, extInput, (void**) &inputStream);
       CHECK_STATUS;
       free(codecName);
-      codecName = strdup(avcodec_get_name(inputStream->codecpar->codec_id));
+      codecName = strdup(ffmpeg_static_avcodec_get_name(inputStream->codecpar->codec_id));
     }
 
     if ((codecName != nullptr) && (codecName[0] == '{')) { // Assume that some JSON has been passed
@@ -3962,31 +3962,31 @@ napi_value newStream(napi_env env, napi_callback_info info) {
       status = napi_get_value_int32(env, cidValue, (int32_t*) &codecID);
       if (status == napi_ok) {
         if ((fmtCtx->iformat == nullptr) && (fmtCtx->oformat == nullptr)) {
-          codec = avcodec_find_encoder(codecID);
+          codec = ffmpeg_static_avcodec_find_encoder(codecID);
         } else {
-          if (fmtCtx->oformat) { codec = avcodec_find_encoder(codecID); }
+          if (fmtCtx->oformat) { codec = ffmpeg_static_avcodec_find_encoder(codecID); }
         }
         if (codec == nullptr) {
-          codec = avcodec_find_decoder(codecID);
+          codec = ffmpeg_static_avcodec_find_decoder(codecID);
         }
       }
     } else {
       if (fmtCtx->oformat) { // Look for encoders
-        codec = avcodec_find_encoder_by_name(codecName);
+        codec = ffmpeg_static_avcodec_find_encoder_by_name(codecName);
         if (codec == nullptr) {
-          codecDesc = avcodec_descriptor_get_by_name(codecName);
+          codecDesc = ffmpeg_static_avcodec_descriptor_get_by_name(codecName);
           if (codecDesc != nullptr) {
-            codec = avcodec_find_encoder(codecDesc->id);
+            codec = ffmpeg_static_avcodec_find_encoder(codecDesc->id);
           }
         }
       }
       if (codec == nullptr) {
-        codec = avcodec_find_decoder_by_name(codecName);
+        codec = ffmpeg_static_avcodec_find_decoder_by_name(codecName);
         if (codec == nullptr) {
           codecDesc = codecName != nullptr ?
-            avcodec_descriptor_get_by_name(codecName) : nullptr;
+            ffmpeg_static_avcodec_descriptor_get_by_name(codecName) : nullptr;
           if (codecDesc != nullptr) {
-            codec = avcodec_find_decoder(codecDesc->id);
+            codec = ffmpeg_static_avcodec_find_decoder(codecDesc->id);
           }
         }
       }
@@ -3997,7 +3997,7 @@ napi_value newStream(napi_env env, napi_callback_info info) {
   } else {
     NAPI_THROW_ERROR("Stream requires an options object with a codec name.");
   }
-  stream = avformat_new_stream(fmtCtx, codec);
+  stream = ffmpeg_static_avformat_new_stream(fmtCtx, codec);
   // printf("Stupidist codec timebase is %i/%i\n", stream->codec->time_base.num,
   //   stream->codec->time_base.den);
 
@@ -4020,7 +4020,7 @@ napi_value newStream(napi_env env, napi_callback_info info) {
     // printf("Attempting to set transfer internal stream timing.\n");
     status = napi_get_value_external(env, extInput, (void**) &inputStream);
     CHECK_STATUS;
-    ret = avformat_transfer_internal_stream_timing_info(fmtCtx->oformat,
+    ret = ffmpeg_static_avformat_transfer_internal_stream_timing_info(fmtCtx->oformat,
       stream, inputStream, AVFMT_TBCF_AUTO);
     if (ret < 0) {
       printf("%s", avErrorMsg("DEBUG: Failed to transfer timebase: ", ret));
@@ -4738,7 +4738,7 @@ napi_value getStreamMetadata(napi_env env, napi_callback_info info) {
   status = napi_create_object(env, &result);
   CHECK_STATUS;
 
-  while ((tag = av_dict_get(stream->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
+  while ((tag = ffmpeg_static_av_dict_get(stream->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
     status = beam_set_string_utf8(env, result, tag->key, tag->value);
     CHECK_STATUS;
   }
@@ -5073,9 +5073,9 @@ napi_value setStreamSideData(napi_env env, napi_callback_info info) {
     case napi_undefined:
       for ( int x = 0 ; x < stream->nb_side_data ; x++ ) {
         sd = &stream->side_data[x];
-        av_freep(&sd->data);
+        ffmpeg_static_av_freep(&sd->data);
       }
-      av_freep(&stream->side_data);
+      ffmpeg_static_av_freep(&stream->side_data);
       stream->nb_side_data = 0;
       if (type != napi_object) { goto done; };
       break;
@@ -5122,7 +5122,7 @@ napi_value setStreamSideData(napi_env env, napi_callback_info info) {
     } else {
       status = napi_get_buffer_info(env, element, &rawdata, &rawdataSize);
       CHECK_STATUS;
-      uint8_t* pktdata = av_stream_new_side_data(stream,
+      uint8_t* pktdata = ffmpeg_static_av_stream_new_side_data(stream,
         (AVPacketSideDataType) psdt, rawdataSize);
       if (pktdata != nullptr) {
         memcpy(pktdata, rawdata, rawdataSize);
@@ -5233,7 +5233,7 @@ napi_status fromAVStream(napi_env env, AVStream* stream, napi_value* result) {
   PASS_STATUS;
   status = napi_get_undefined(env, &undef);
   PASS_STATUS;
-  // Note - streams are cleaned by avcodec_close() and avcodec_free_context()
+  // Note - streams are cleaned by ffmpeg_static_avcodec_close() and ffmpeg_static_avcodec_free_context()
   status = napi_create_external(env, stream, nullptr, nullptr, &extStream);
   PASS_STATUS;
 

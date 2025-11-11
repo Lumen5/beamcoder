@@ -36,23 +36,23 @@ void demuxerExecute(napi_env env, void* data) {
 
   int ret;
 
-  if (!(c->format = avformat_alloc_context())) {
+  if (!(c->format = ffmpeg_static_avformat_alloc_context())) {
     c->status = BEAMCODER_ERROR_START;
     c->errorMsg = avErrorMsg("Problem allocating demuxer: ", AVERROR(ENOMEM));
     return;
   }
 
   if (c->adaptor) {
-    AVIOContext* avio_ctx = avio_alloc_context(nullptr, 0, 0, c->adaptor, &read_packet, nullptr, nullptr);
-    if (!avio_ctx) {
+    AVIOContext* ffmpeg_static_avio_ctx = ffmpeg_static_avio_alloc_context(nullptr, 0, 0, c->adaptor, &read_packet, nullptr, nullptr);
+    if (!ffmpeg_static_avio_ctx) {
       c->status = BEAMCODER_ERROR_START;
       c->errorMsg = avErrorMsg("Problem allocating demuxer context: ", AVERROR(ENOMEM));
       return;
     }
-    c->format->pb = avio_ctx;
+    c->format->pb = ffmpeg_static_avio_ctx;
   }
 
-  if ((ret = avformat_open_input(&c->format, c->filename, c->iformat, &c->options))) {
+  if ((ret = ffmpeg_static_avformat_open_input(&c->format, c->filename, c->iformat, &c->options))) {
     c->status = BEAMCODER_ERROR_START;
     char err[10000] = " Problem opening input format. filename: ";
     strcat(err, c->filename);
@@ -81,7 +81,7 @@ void demuxerExecute(napi_env env, void* data) {
     return;
   }
 
-  if ((ret = avformat_find_stream_info(c->format, nullptr))) {
+  if ((ret = ffmpeg_static_avformat_find_stream_info(c->format, nullptr))) {
     printf("DEBUG: Could not find stream info for file %s, return value %i.",
       c->filename, ret);
   }
@@ -104,7 +104,7 @@ void demuxerComplete(napi_env env,  napi_status asyncStatus, void* data) {
     REJECT_STATUS;
   }
 
-  while ((tag = av_dict_get(c->options, "", tag, AV_DICT_IGNORE_SUFFIX))) {
+  while ((tag = ffmpeg_static_av_dict_get(c->options, "", tag, AV_DICT_IGNORE_SUFFIX))) {
     printf("DEBUG: On creating demuxer '%s', failed to set option %s.\n",
       c->format->iformat->name, tag->key);
   }
@@ -250,7 +250,7 @@ napi_value demuxer(napi_env env, napi_callback_info info) {
 
 void demuxerFinalizer(napi_env env, void* data, void* hint) {
   AVFormatContext *fmtCtx = (AVFormatContext*) data;
-  avformat_close_input(&fmtCtx);
+  ffmpeg_static_avformat_close_input(&fmtCtx);
 }
 
 void readFrameExecute(napi_env env, void* data) {
@@ -264,9 +264,9 @@ void readFrameExecute(napi_env env, void* data) {
     return;
   }
 
-  ret = av_read_frame(fmtCtx, c->packet);
+  ret = ffmpeg_static_av_read_frame(fmtCtx, c->packet);
   if (ret == AVERROR_EOF) {
-    av_packet_free(&c->packet);
+    ffmpeg_static_av_packet_free(&c->packet);
   } else if (ret < 0) {
     c->status = BEAMCODER_ERROR_READ_FRAME;
     c->errorMsg = avErrorMsg("Problem reading frame: ", ret);
@@ -351,7 +351,7 @@ void readBufferFinalizer(napi_env env, void* data, void* hint) {
   if (status != napi_ok) {
     printf("DEBUG: Napi failure to adjust external memory. In beamcoder format.cc readBufferFinalizer.");
   }
-  av_buffer_unref(&hintRef);
+  ffmpeg_static_av_buffer_unref(&hintRef);
 }
 
 void seekFrameExecute(napi_env env, void *data) {
@@ -365,7 +365,7 @@ void seekFrameExecute(napi_env env, void *data) {
     return;
   }
 
-  ret = av_seek_frame(fmtCtx, c->streamIndex, c->timestamp, c->flags);
+  ret = ffmpeg_static_av_seek_frame(fmtCtx, c->streamIndex, c->timestamp, c->flags);
   // printf("Seek and ye shall %i, streamIndex = %i, timestamp = %i, flags = %i\n",
   //   ret, c->streamIndex, c->timestamp, c->flags );
   if (ret < 0) {
@@ -588,9 +588,9 @@ napi_value forceCloseInput(napi_env env, napi_callback_info info) {
     fc = fmtRef->fmtCtx;
     if (fc->pb != nullptr) {
       if (adaptor)
-        avio_context_free(&fc->pb);
+        ffmpeg_static_avio_context_free(&fc->pb);
       else {
-        ret = avio_closep(&fc->pb);
+        ret = ffmpeg_static_avio_closep(&fc->pb);
         if (ret < 0) {
           printf("DEBUG: For url '%s', %s", (fc->url != nullptr) ? fc->url : "unknown",
             avErrorMsg("error closing IO: ", ret));
@@ -598,7 +598,7 @@ napi_value forceCloseInput(napi_env env, napi_callback_info info) {
       }
     }
 
-    avformat_close_input(&fmtRef->fmtCtx);
+    ffmpeg_static_avformat_close_input(&fmtRef->fmtCtx);
   }
 
   status = napi_get_undefined(env, &result);

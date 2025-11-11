@@ -73,7 +73,7 @@ napi_value getCodecCtxCodecTag(napi_env env, napi_callback_info info) {
   size_t argc = 0;
   status = napi_get_cb_info(env, info, &argc, nullptr, nullptr, (void**) &codec);
   CHECK_STATUS;
-  av_fourcc_make_string(codecTag, codec->codec_tag);
+  ffmpeg_static_av_fourcc_make_string(codecTag, codec->codec_tag);
   if (strchr(codecTag, '[')) { // not a recognised tag
     status = napi_create_uint32(env, codec->codec_tag, &result);
     CHECK_STATUS;
@@ -804,7 +804,7 @@ napi_value setCodecCtxExtraData(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
   if (type == napi_null) {
     if (codec->extradata_size > 0) { // Tidy up old buffers
-      av_freep(&codec->extradata);
+      ffmpeg_static_av_freep(&codec->extradata);
     }
     codec->extradata_size = 0;
     goto done;
@@ -818,10 +818,10 @@ napi_value setCodecCtxExtraData(napi_env env, napi_callback_info info) {
   status = napi_get_buffer_info(env, args[0], (void**) &data, &dataLen);
   CHECK_STATUS;
   if (codec->extradata_size > 0) { // Tidy up old buffers
-    av_freep(&codec->extradata);
+    ffmpeg_static_av_freep(&codec->extradata);
     codec->extradata_size = 0;
   }
-  codec->extradata = (uint8_t*) av_mallocz(dataLen + AV_INPUT_BUFFER_PADDING_SIZE);
+  codec->extradata = (uint8_t*) ffmpeg_static_av_mallocz(dataLen + AV_INPUT_BUFFER_PADDING_SIZE);
   codec->extradata_size = dataLen;
   memcpy(codec->extradata, data, dataLen);
 
@@ -1168,7 +1168,7 @@ napi_value getCodecCtxPixFmt(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, &argc, nullptr, nullptr, (void**) &codec);
   CHECK_STATUS;
 
-  pixFmtName = av_get_pix_fmt_name(codec->pix_fmt);
+  pixFmtName = ffmpeg_static_av_get_pix_fmt_name(codec->pix_fmt);
   if (pixFmtName != nullptr) {
     status = napi_create_string_utf8(env, (char*) pixFmtName, NAPI_AUTO_LENGTH, &result);
     CHECK_STATUS;
@@ -1211,7 +1211,7 @@ napi_value setCodecCtxPixFmt(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, args[0], name, strLen + 1, &strLen);
   CHECK_STATUS;
 
-  pixFmt = av_get_pix_fmt((const char *) name);
+  pixFmt = ffmpeg_static_av_get_pix_fmt((const char *) name);
   free(name);
   CHECK_STATUS;
   if (pixFmt != AV_PIX_FMT_NONE) {
@@ -1763,7 +1763,7 @@ napi_value setCodecCtxSliceOffset(napi_env env, napi_callback_info info) {
   }
 
   codec->slice_count = sliceCount;
-  codec->slice_offset = (int*) av_malloc(sizeof(int) * sliceCount);
+  codec->slice_offset = (int*) ffmpeg_static_av_malloc(sizeof(int) * sliceCount);
   for ( int x = 0 ; x < sliceCount ; x++ ) {
     status = napi_get_element(env, args[0], x, &element);
     CHECK_STATUS;
@@ -2496,7 +2496,7 @@ napi_value setCodecCtxIntraMatrix(napi_env env, napi_callback_info info) {
   // if (!isArray) {
   //   NAPI_THROW_ERROR("An array of numbers is required to set the intra_matrix property.");
   // }
-  codec->intra_matrix = (uint16_t*) av_mallocz(sizeof(uint16_t) * 64);
+  codec->intra_matrix = (uint16_t*) ffmpeg_static_av_mallocz(sizeof(uint16_t) * 64);
   for ( int x = 0 ; x < 64 ; x++ ) {
     status = napi_get_element(env, args[0], x, &element);
     if (status != napi_ok) {
@@ -2570,7 +2570,7 @@ napi_value setCodecCtxInterMatrix(napi_env env, napi_callback_info info) {
   // if (!isArray) {
   //   NAPI_THROW_ERROR("An array of numbers is required to set the inter_matrix property.");
   // }
-  codec->inter_matrix = (uint16_t*) av_mallocz(sizeof(uint16_t) * 64);
+  codec->inter_matrix = (uint16_t*) ffmpeg_static_av_mallocz(sizeof(uint16_t) * 64);
   for ( int x = 0 ; x < 64 ; x++ ) {
     status = napi_get_element(env, args[0], x, &element);
     if (status != napi_ok) {
@@ -2972,7 +2972,7 @@ napi_value getCodecCtxColorPrim(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, &argc, nullptr, nullptr, (void**) &codec);
   CHECK_STATUS;
 
-  colPrimName = av_color_primaries_name(codec->color_primaries);
+  colPrimName = ffmpeg_static_av_color_primaries_name(codec->color_primaries);
   status = napi_create_string_utf8(env,
     (colPrimName != nullptr) ? (char*) colPrimName : "unknown",
     NAPI_AUTO_LENGTH, &result);
@@ -3012,7 +3012,7 @@ napi_value setCodecCtxColorPrim(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, args[0], name, strLen + 1, &strLen);
   CHECK_STATUS;
 
-  colPrim = av_color_primaries_from_name((const char *) name);
+  colPrim = ffmpeg_static_av_color_primaries_from_name((const char *) name);
   free(name);
   CHECK_STATUS;
   if (colPrim >= 0) {
@@ -3037,7 +3037,7 @@ napi_value getCodecCtxColorTrc(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, &argc, nullptr, nullptr, (void**) &codec);
   CHECK_STATUS;
 
-  colTrcName = av_color_transfer_name(codec->color_trc);
+  colTrcName = ffmpeg_static_av_color_transfer_name(codec->color_trc);
   status = napi_create_string_utf8(env,
     (colTrcName != nullptr) ? (char*) colTrcName : "unknown",
     NAPI_AUTO_LENGTH, &result);
@@ -3077,7 +3077,7 @@ napi_value setCodecCtxColorTrc(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, args[0], name, strLen + 1, &strLen);
   CHECK_STATUS;
 
-  colTrc = av_color_transfer_from_name((const char *) name);
+  colTrc = ffmpeg_static_av_color_transfer_from_name((const char *) name);
   free(name);
   CHECK_STATUS;
   if (colTrc >= 0) {
@@ -3102,7 +3102,7 @@ napi_value getCodecCtxColorspace(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, &argc, nullptr, nullptr, (void**) &codec);
   CHECK_STATUS;
 
-  colspaceName = av_color_space_name(codec->colorspace);
+  colspaceName = ffmpeg_static_av_color_space_name(codec->colorspace);
   status = napi_create_string_utf8(env,
     (colspaceName != nullptr) ? (char*) colspaceName : "unknown",
     NAPI_AUTO_LENGTH, &result);
@@ -3142,7 +3142,7 @@ napi_value setCodecCtxColorspace(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, args[0], name, strLen + 1, &strLen);
   CHECK_STATUS;
 
-  colspace= av_color_space_from_name((const char *) name);
+  colspace= ffmpeg_static_av_color_space_from_name((const char *) name);
   free(name);
   CHECK_STATUS;
   if (colspace >= 0) {
@@ -3167,7 +3167,7 @@ napi_value getCodecCtxColorRange(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, &argc, nullptr, nullptr, (void**) &codec);
   CHECK_STATUS;
 
-  colRangeName = av_color_range_name(codec->color_range);
+  colRangeName = ffmpeg_static_av_color_range_name(codec->color_range);
   status = napi_create_string_utf8(env,
     (colRangeName != nullptr) ? (char*) colRangeName : "unknown",
     NAPI_AUTO_LENGTH, &result);
@@ -3207,7 +3207,7 @@ napi_value setCodecCtxColorRange(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, args[0], name, strLen + 1, &strLen);
   CHECK_STATUS;
 
-  colrange = av_color_range_from_name((const char *) name);
+  colrange = ffmpeg_static_av_color_range_from_name((const char *) name);
   free(name);
   CHECK_STATUS;
   if (colrange >= 0) {
@@ -3232,7 +3232,7 @@ napi_value getCodecCtxChromaLoc(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, &argc, nullptr, nullptr, (void**) &codec);
   CHECK_STATUS;
 
-  chromaLocName = av_chroma_location_name(codec->chroma_sample_location);
+  chromaLocName = ffmpeg_static_av_chroma_location_name(codec->chroma_sample_location);
   status = napi_create_string_utf8(env,
     (chromaLocName != nullptr) ? (char*) chromaLocName : "unspecified",
     NAPI_AUTO_LENGTH, &result);
@@ -3272,7 +3272,7 @@ napi_value setCodecCtxChromaLoc(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, args[0], name, strLen + 1, &strLen);
   CHECK_STATUS;
 
-  chromaLoc = av_chroma_location_from_name((const char *) name);
+  chromaLoc = ffmpeg_static_av_chroma_location_from_name((const char *) name);
   free(name);
   CHECK_STATUS;
   if (chromaLoc >= 0) {
@@ -3475,7 +3475,7 @@ napi_value getCodecCtxSampleFmt(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, &argc, nullptr, nullptr, (void**) &codec);
   CHECK_STATUS;
 
-  sampleFmtName = av_get_sample_fmt_name(codec->sample_fmt);
+  sampleFmtName = ffmpeg_static_av_get_sample_fmt_name(codec->sample_fmt);
   if (sampleFmtName != nullptr) {
     status = napi_create_string_utf8(env, (char*) sampleFmtName, NAPI_AUTO_LENGTH, &result);
     CHECK_STATUS;
@@ -3518,7 +3518,7 @@ napi_value setCodecCtxSampleFmt(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, args[0], name, strLen + 1, &strLen);
   CHECK_STATUS;
 
-  sampleFmt = av_get_sample_fmt((const char *) name);
+  sampleFmt = ffmpeg_static_av_get_sample_fmt((const char *) name);
   free(name);
   CHECK_STATUS;
   if (sampleFmt != AV_SAMPLE_FMT_NONE) {
@@ -3653,8 +3653,8 @@ napi_value getCodecCtxChanLayout(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, &argc, nullptr, nullptr, (void**) &codec);
   CHECK_STATUS;
 
-  av_get_channel_layout_string(channelLayoutName, 64, 0,
-    codec->channel_layout ? codec->channel_layout : av_get_default_channel_layout(codec->channels));
+  ffmpeg_static_av_get_channel_layout_string(channelLayoutName, 64, 0,
+    codec->channel_layout ? codec->channel_layout : ffmpeg_static_av_get_default_channel_layout(codec->channels));
   status = napi_create_string_utf8(env, channelLayoutName, NAPI_AUTO_LENGTH, &result);
   CHECK_STATUS;
 
@@ -3692,11 +3692,11 @@ napi_value setCodecCtxChanLayout(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, args[0], name, strLen + 1, &strLen);
   CHECK_STATUS;
 
-  chanLay = av_get_channel_layout(name);
+  chanLay = ffmpeg_static_av_get_channel_layout(name);
   free(name);
   if (chanLay != 0) {
     codec->channel_layout = chanLay;
-    codec->channels = av_get_channel_layout_nb_channels(chanLay);
+    codec->channels = ffmpeg_static_av_get_channel_layout_nb_channels(chanLay);
   } else {
     NAPI_THROW_ERROR("Channel layout name is not recognized. Set 'null' for '0 channels'.");
   }
@@ -3718,7 +3718,7 @@ napi_value getCodecCtxReqChanLayout(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
 
   if (codec->request_channel_layout) {
-    av_get_channel_layout_string(channelLayoutName, 64, 0, codec->request_channel_layout);
+    ffmpeg_static_av_get_channel_layout_string(channelLayoutName, 64, 0, codec->request_channel_layout);
     status = napi_create_string_utf8(env, channelLayoutName, NAPI_AUTO_LENGTH, &result);
     CHECK_STATUS;
   } else {
@@ -3760,7 +3760,7 @@ napi_value setCodecCtxReqChanLayout(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, args[0], name, strLen + 1, &strLen);
   CHECK_STATUS;
 
-  chanLay = av_get_channel_layout(name);
+  chanLay = ffmpeg_static_av_get_channel_layout(name);
   free(name);
   if (chanLay != 0) {
     codec->request_channel_layout = chanLay;
@@ -3839,7 +3839,7 @@ napi_value getCodecCtxReqSampleFmt(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, &argc, nullptr, nullptr, (void**) &codec);
   CHECK_STATUS;
 
-  sampleFmtName = av_get_sample_fmt_name(codec->request_sample_fmt);
+  sampleFmtName = ffmpeg_static_av_get_sample_fmt_name(codec->request_sample_fmt);
   if (sampleFmtName != nullptr) {
     status = napi_create_string_utf8(env, (char*) sampleFmtName, NAPI_AUTO_LENGTH, &result);
     CHECK_STATUS;
@@ -3883,7 +3883,7 @@ napi_value setCodecCtxReqSampleFmt(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
 
 
-  sampleFmt = av_get_sample_fmt((const char *) name);
+  sampleFmt = ffmpeg_static_av_get_sample_fmt((const char *) name);
   free(name);
   CHECK_STATUS;
   if (sampleFmt != AV_SAMPLE_FMT_NONE) {
@@ -4209,12 +4209,12 @@ napi_value setCodecCtxRcOverride(napi_env env, napi_callback_info info) {
   }  
   if (count == 0) {
     if (codec->rc_override != nullptr) {
-      av_freep(&codec->rc_override);
+      ffmpeg_static_av_freep(&codec->rc_override);
     }
     codec->rc_override_count = 0;
     goto done;
   }
-  list = (RcOverride*) av_malloc(sizeof(struct RcOverride) * count);
+  list = (RcOverride*) ffmpeg_static_av_malloc(sizeof(struct RcOverride) * count);
   for ( int x = 0 ; x < (int32_t) count ; x++ ) {
     status = napi_get_element(env, args[0], x, &element);
     CHECK_STATUS;
@@ -4223,7 +4223,7 @@ napi_value setCodecCtxRcOverride(napi_env env, napi_callback_info info) {
     status = napi_is_array(env, element, &isArray);
     CHECK_STATUS;
     if (isArray || (type != napi_object)) {
-      av_freep(&list);
+      ffmpeg_static_av_freep(&list);
       NAPI_THROW_ERROR("An RcOverride value can only be set with an object.");
     }
     status = beam_get_int32(env, element, "start_frame", &list[x].start_frame);
@@ -4235,7 +4235,7 @@ napi_value setCodecCtxRcOverride(napi_env env, napi_callback_info info) {
     status = beam_get_double(env, element, "quality_factor", (double*) &list[x].quality_factor);
     CHECK_STATUS;
   }
-  av_freep(&codec->rc_override);
+  ffmpeg_static_av_freep(&codec->rc_override);
   codec->rc_override = list;
   codec->rc_override_count = count;
 
@@ -4548,7 +4548,7 @@ napi_value setCodecCtxStatsIn(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
   if ((type == napi_null) || (type == napi_undefined)) {
     if (codec->stats_in != nullptr) {
-      av_freep(&codec->stats_in);
+      ffmpeg_static_av_freep(&codec->stats_in);
     }
     codec->stats_in = nullptr;
     goto done;
@@ -4559,12 +4559,12 @@ napi_value setCodecCtxStatsIn(napi_env env, napi_callback_info info) {
 
   status = napi_get_value_string_utf8(env, args[0], nullptr, 0, &strLen);
   CHECK_STATUS;
-  stats = (char*) av_malloc(sizeof(char) * (strLen + 1));
+  stats = (char*) ffmpeg_static_av_malloc(sizeof(char) * (strLen + 1));
   status = napi_get_value_string_utf8(env, args[0], stats, strLen + 1, &strLen);
   CHECK_STATUS;
 
   if (codec->stats_in != nullptr) {
-    av_freep(&codec->stats_in);
+    ffmpeg_static_av_freep(&codec->stats_in);
   }
   codec->stats_in = stats;
 
@@ -5503,7 +5503,7 @@ napi_value getCodecCtxProfile(napi_env env, napi_callback_info info) {
   size_t argc = 0;
   status = napi_get_cb_info(env, info, &argc, nullptr, nullptr, (void**) &codec);
   CHECK_STATUS;
-  profileName = av_get_profile_name(codec->codec, codec->profile);
+  profileName = ffmpeg_static_av_get_profile_name(codec->codec, codec->profile);
   if (profileName != nullptr) {
     status = napi_create_string_utf8(env,
       (char*) profileName, NAPI_AUTO_LENGTH, &result);
@@ -5833,7 +5833,7 @@ napi_value setCodecCtxSubtitleHdr(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
   if (type == napi_null) {
     if (codec->subtitle_header_size > 0) { // Tidy up old buffers
-      av_freep(&codec->subtitle_header);
+      ffmpeg_static_av_freep(&codec->subtitle_header);
     }
     codec->subtitle_header_size = 0;
     goto done;
@@ -5847,10 +5847,10 @@ napi_value setCodecCtxSubtitleHdr(napi_env env, napi_callback_info info) {
   status = napi_get_buffer_info(env, args[0], (void**) &data, &dataLen);
   CHECK_STATUS;
   if (codec->subtitle_header_size > 0) { // Tidy up old buffers
-    av_freep(&codec->subtitle_header);
+    ffmpeg_static_av_freep(&codec->subtitle_header);
     codec->subtitle_header_size = 0;
   }
-  codec->subtitle_header = (uint8_t*) av_mallocz(dataLen + AV_INPUT_BUFFER_PADDING_SIZE);
+  codec->subtitle_header = (uint8_t*) ffmpeg_static_av_mallocz(dataLen + AV_INPUT_BUFFER_PADDING_SIZE);
   codec->subtitle_header_size = dataLen;
   memcpy(codec->subtitle_header, data, dataLen);
 
@@ -5958,7 +5958,7 @@ napi_value getCodecCtxSwPixFmt(napi_env env, napi_callback_info info) {
   if (hwFramesContextRef)
     hwFramesContext = (AVHWFramesContext*)hwFramesContextRef->data;
   sw_pix_fmt = hwFramesContext ? hwFramesContext->sw_format : codec->sw_pix_fmt;
-  pixFmtName = av_get_pix_fmt_name(sw_pix_fmt);
+  pixFmtName = ffmpeg_static_av_get_pix_fmt_name(sw_pix_fmt);
   if (pixFmtName != nullptr) {
     status = napi_create_string_utf8(env, pixFmtName, NAPI_AUTO_LENGTH, &result);
     CHECK_STATUS;
@@ -6094,7 +6094,7 @@ napi_value setCodecCtxSubCharenc(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
   if ((type == napi_null) || (type == napi_undefined)) {
     if (codec->sub_charenc != nullptr) {
-      av_freep(&codec->sub_charenc);
+      ffmpeg_static_av_freep(&codec->sub_charenc);
     }
     codec->sub_charenc = nullptr;
     goto done;
@@ -6105,12 +6105,12 @@ napi_value setCodecCtxSubCharenc(napi_env env, napi_callback_info info) {
 
   status = napi_get_value_string_utf8(env, args[0], nullptr, 0, &strLen);
   CHECK_STATUS;
-  subchar = (char*) av_malloc(sizeof(char) * (strLen + 1));
+  subchar = (char*) ffmpeg_static_av_malloc(sizeof(char) * (strLen + 1));
   status = napi_get_value_string_utf8(env, args[0], subchar, strLen + 1, &strLen);
   CHECK_STATUS;
 
   if (codec->sub_charenc != nullptr) {
-    av_freep(&codec->sub_charenc);
+    ffmpeg_static_av_freep(&codec->sub_charenc);
   }
   codec->sub_charenc = subchar;
 
@@ -6242,7 +6242,7 @@ napi_value setCodecCtxChromaIntraMatrix(napi_env env, napi_callback_info info) {
   // if (!isArray) {
   //   NAPI_THROW_ERROR("An array of 64 numbers is required to set the chroma_intra_matrix property.");
   // }
-  codec->chroma_intra_matrix = (uint16_t*) av_mallocz(sizeof(uint16_t) * 64);
+  codec->chroma_intra_matrix = (uint16_t*) ffmpeg_static_av_mallocz(sizeof(uint16_t) * 64);
   for ( int x = 0 ; x < 64 ; x++ ) {
     status = napi_get_element(env, args[0], x, &element);
     if (status != napi_ok) {
@@ -6304,7 +6304,7 @@ napi_value setCodecCtxDumpSep(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
   if ((type == napi_null) || (type == napi_undefined)) {
     if (codec->dump_separator != nullptr) {
-      av_freep(&codec->dump_separator);
+      ffmpeg_static_av_freep(&codec->dump_separator);
     }
     codec->dump_separator = nullptr;
     goto done;
@@ -6314,12 +6314,12 @@ napi_value setCodecCtxDumpSep(napi_env env, napi_callback_info info) {
   }
   status = napi_get_value_string_utf8(env, args[0], nullptr, 0, &strLen);
   CHECK_STATUS;
-  dumpy = (uint8_t*) av_malloc(sizeof(char) * (strLen + 1));
+  dumpy = (uint8_t*) ffmpeg_static_av_malloc(sizeof(char) * (strLen + 1));
   status = napi_get_value_string_utf8(env, args[0], (char*) dumpy, strLen + 1, &strLen);
   CHECK_STATUS;
 
   if (codec->dump_separator != nullptr) {
-    av_freep(&codec->dump_separator);
+    ffmpeg_static_av_freep(&codec->dump_separator);
   }
   codec->dump_separator = dumpy;
 
@@ -6368,7 +6368,7 @@ napi_value setCodecCtxWhitelist(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
   if ((type == napi_null) || (type == napi_undefined)) {
     if (codec->codec_whitelist != nullptr) {
-      av_freep(&codec->codec_whitelist);
+      ffmpeg_static_av_freep(&codec->codec_whitelist);
     }
     codec->codec_whitelist = nullptr;
     goto done;
@@ -6379,12 +6379,12 @@ napi_value setCodecCtxWhitelist(napi_env env, napi_callback_info info) {
 
   status = napi_get_value_string_utf8(env, args[0], nullptr, 0, &strLen);
   CHECK_STATUS;
-  whity = (char*) av_malloc(sizeof(char) * (strLen + 1));
+  whity = (char*) ffmpeg_static_av_malloc(sizeof(char) * (strLen + 1));
   status = napi_get_value_string_utf8(env, args[0], whity, strLen + 1, &strLen);
   CHECK_STATUS;
 
   if (codec->codec_whitelist != nullptr) {
-    av_freep(&codec->codec_whitelist);
+    ffmpeg_static_av_freep(&codec->codec_whitelist);
   }
   codec->codec_whitelist = whity;
 
@@ -6487,7 +6487,7 @@ napi_value setCodecHWFramesCtx(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
   status = napi_get_value_external(env, contextExt, (void**) &contextRef);
   CHECK_STATUS;
-  codec->hw_frames_ctx = av_buffer_ref(contextRef);
+  codec->hw_frames_ctx = ffmpeg_static_av_buffer_ref(contextRef);
 
   status = napi_get_undefined(env, &result);
   CHECK_STATUS;
@@ -7250,32 +7250,32 @@ void codecContextFinalizer(napi_env env, void* data, void* hint) {
   AVCodecContext* codecCtx = (AVCodecContext*) data;
   bool* encodingRef = (bool*) hint;
   if ((codecCtx->extradata_size > 0) && (codecCtx->extradata != nullptr)) {
-    av_freep(&codecCtx->extradata);
+    ffmpeg_static_av_freep(&codecCtx->extradata);
     codecCtx->extradata_size = 0;
   }
   if (codecCtx->rc_override_count > 0) {
-    av_freep(&codecCtx->rc_override);
+    ffmpeg_static_av_freep(&codecCtx->rc_override);
   }
   if (codecCtx->stats_in != nullptr) {
-    av_freep(&codecCtx->stats_in);
+    ffmpeg_static_av_freep(&codecCtx->stats_in);
   }
   if (codecCtx->sub_charenc != nullptr) {
-    av_freep(&codecCtx->sub_charenc);
+    ffmpeg_static_av_freep(&codecCtx->sub_charenc);
   }
   if (codecCtx->dump_separator != nullptr) {
-    av_freep(&codecCtx->dump_separator);
+    ffmpeg_static_av_freep(&codecCtx->dump_separator);
   }
   if (codecCtx->codec_whitelist != nullptr) {
-    av_freep(&codecCtx->codec_whitelist);
+    ffmpeg_static_av_freep(&codecCtx->codec_whitelist);
   }
   // Don't delete if allocated by libavcodec when decoding
   if (*encodingRef &&(codecCtx->subtitle_header_size > 0) &&
       (codecCtx->subtitle_header != nullptr)) {
-    av_freep(&codecCtx->subtitle_header);
+    ffmpeg_static_av_freep(&codecCtx->subtitle_header);
     codecCtx->subtitle_header_size = 0;
   }
-  avcodec_close(codecCtx);
-  avcodec_free_context(&codecCtx);
+  ffmpeg_static_avcodec_close(codecCtx);
+  ffmpeg_static_avcodec_free_context(&codecCtx);
 }
 
 napi_status fromAVCodecDescriptor(napi_env env, const AVCodecDescriptor* codecDesc,
@@ -7325,8 +7325,8 @@ napi_value extractParams(napi_env env, napi_callback_info info) {
   status = napi_get_value_external(env, extCodec, (void**) &codecCtx);
   CHECK_STATUS;
 
-  codecPar = avcodec_parameters_alloc();
-  if ((ret = avcodec_parameters_from_context(codecPar, codecCtx))) {
+  codecPar = ffmpeg_static_avcodec_parameters_alloc();
+  if ((ret = ffmpeg_static_avcodec_parameters_from_context(codecPar, codecCtx))) {
     NAPI_THROW_ERROR(avErrorMsg("Failed to extract parameters from codec context: ", ret));
   }
 
@@ -7378,7 +7378,7 @@ napi_value useParams(napi_env env, napi_callback_info info) {
   if (codecCtx->codec_type != codecPar->codec_type) {
     NAPI_THROW_ERROR("Codec type for codec parameters and codec context differ.");
   }
-  if ((ret = avcodec_parameters_to_context(codecCtx, codecPar))) {
+  if ((ret = ffmpeg_static_avcodec_parameters_to_context(codecCtx, codecPar))) {
     NAPI_THROW_ERROR(avErrorMsg("Problem using parameters to set up codec context: ", ret));
   }
 

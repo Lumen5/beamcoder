@@ -53,35 +53,35 @@ napi_value versions(napi_env env, napi_callback_info info) {
   status = napi_create_object(env, &result);
   CHECK_STATUS;
 
-  status = napi_create_uint32(env, avcodec_version(), &value);
+  status = napi_create_uint32(env, ffmpeg_static_avcodec_version(), &value);
   CHECK_STATUS;
   status = napi_set_named_property(env, result, "avcodec", value);
   CHECK_STATUS;
-  status = napi_create_uint32(env, avdevice_version(), &value);
+  status = napi_create_uint32(env, ffmpeg_static_avdevice_version(), &value);
   CHECK_STATUS;
   status = napi_set_named_property(env, result, "avdevice", value);
   CHECK_STATUS;
-  status = napi_create_uint32(env, avfilter_version(), &value);
+  status = napi_create_uint32(env, ffmpeg_static_avfilter_version(), &value);
   CHECK_STATUS;
   status = napi_set_named_property(env, result, "avfilter", value);
   CHECK_STATUS;
-  status = napi_create_uint32(env, avformat_version(), &value);
+  status = napi_create_uint32(env, ffmpeg_static_avformat_version(), &value);
   CHECK_STATUS;
   status = napi_set_named_property(env, result, "avformat", value);
   CHECK_STATUS;
-  status = napi_create_uint32(env, avutil_version(), &value);
+  status = napi_create_uint32(env, ffmpeg_static_avutil_version(), &value);
   CHECK_STATUS;
   status = napi_set_named_property(env, result, "avutil", value);
   CHECK_STATUS;
-  status = napi_create_uint32(env, postproc_version(), &value);
+  status = napi_create_uint32(env, ffmpeg_static_postproc_version(), &value);
   CHECK_STATUS;
   status = napi_set_named_property(env, result, "postproc", value);
   CHECK_STATUS;
-  status = napi_create_uint32(env, swresample_version(), &value);
+  status = napi_create_uint32(env, ffmpeg_static_swresample_version(), &value);
   CHECK_STATUS;
   status = napi_set_named_property(env, result, "swresample", value);
   CHECK_STATUS;
-  status = napi_create_uint32(env, swscale_version(), &value);
+  status = napi_create_uint32(env, ffmpeg_static_swscale_version(), &value);
   CHECK_STATUS;
   status = napi_set_named_property(env, result, "swscale", value);
   CHECK_STATUS;
@@ -93,7 +93,7 @@ napi_value avVersionInfo(napi_env env, napi_callback_info info) {
   napi_status status;
   napi_value result;
 
-  const char* verInfo = av_version_info();
+  const char* verInfo = ffmpeg_static_av_version_info();
 
   status = napi_create_string_utf8(env, verInfo, NAPI_AUTO_LENGTH, &result);
   CHECK_STATUS;
@@ -175,35 +175,35 @@ napi_value configurations(napi_env env, napi_callback_info info) {
   status = napi_create_object(env, &result);
   CHECK_STATUS;
 
-  status = napi_create_string_utf8(env, avcodec_configuration(), NAPI_AUTO_LENGTH, &value);
+  status = napi_create_string_utf8(env, ffmpeg_static_avcodec_configuration(), NAPI_AUTO_LENGTH, &value);
   CHECK_STATUS;
   status = napi_set_named_property(env, result, "avcodec", value);
   CHECK_STATUS;
-  status = napi_create_string_utf8(env, avdevice_configuration(), NAPI_AUTO_LENGTH, &value);
+  status = napi_create_string_utf8(env, ffmpeg_static_avdevice_configuration(), NAPI_AUTO_LENGTH, &value);
   CHECK_STATUS;
   status = napi_set_named_property(env, result, "avdevice", value);
   CHECK_STATUS;
-  status = napi_create_string_utf8(env, avfilter_configuration(), NAPI_AUTO_LENGTH, &value);
+  status = napi_create_string_utf8(env, ffmpeg_static_avfilter_configuration(), NAPI_AUTO_LENGTH, &value);
   CHECK_STATUS;
   status = napi_set_named_property(env, result, "avfilter", value);
   CHECK_STATUS;
-  status = napi_create_string_utf8(env, avformat_configuration(), NAPI_AUTO_LENGTH, &value);
+  status = napi_create_string_utf8(env, ffmpeg_static_avformat_configuration(), NAPI_AUTO_LENGTH, &value);
   CHECK_STATUS;
   status = napi_set_named_property(env, result, "avformat", value);
   CHECK_STATUS;
-  status = napi_create_string_utf8(env, avutil_configuration(), NAPI_AUTO_LENGTH, &value);
+  status = napi_create_string_utf8(env, ffmpeg_static_avutil_configuration(), NAPI_AUTO_LENGTH, &value);
   CHECK_STATUS;
   status = napi_set_named_property(env, result, "avutil", value);
   CHECK_STATUS;
-  status = napi_create_string_utf8(env, postproc_configuration(), NAPI_AUTO_LENGTH, &value);
+  status = napi_create_string_utf8(env, ffmpeg_static_postproc_configuration(), NAPI_AUTO_LENGTH, &value);
   CHECK_STATUS;
   status = napi_set_named_property(env, result, "postproc", value);
   CHECK_STATUS;
-  status = napi_create_string_utf8(env, swresample_configuration(), NAPI_AUTO_LENGTH, &value);
+  status = napi_create_string_utf8(env, ffmpeg_static_swresample_configuration(), NAPI_AUTO_LENGTH, &value);
   CHECK_STATUS;
   status = napi_set_named_property(env, result, "swresample", value);
   CHECK_STATUS;
-  status = napi_create_string_utf8(env, swscale_configuration(), NAPI_AUTO_LENGTH, &value);
+  status = napi_create_string_utf8(env, ffmpeg_static_swscale_configuration(), NAPI_AUTO_LENGTH, &value);
   CHECK_STATUS;
   status = napi_set_named_property(env, result, "swscale", value);
   CHECK_STATUS;
@@ -218,35 +218,35 @@ napi_value licenses(napi_env env, napi_callback_info info) {
   status = napi_create_object(env, &result);
   CHECK_STATUS;
 
-  status = napi_create_string_utf8(env, avcodec_license(), NAPI_AUTO_LENGTH, &value);
+  status = napi_create_string_utf8(env, ffmpeg_static_avcodec_license(), NAPI_AUTO_LENGTH, &value);
   CHECK_STATUS;
   status = napi_set_named_property(env, result, "avcodec", value);
   CHECK_STATUS;
-  status = napi_create_string_utf8(env, avdevice_license(), NAPI_AUTO_LENGTH, &value);
+  status = napi_create_string_utf8(env, ffmpeg_static_avdevice_license(), NAPI_AUTO_LENGTH, &value);
   CHECK_STATUS;
   status = napi_set_named_property(env, result, "avdevice", value);
   CHECK_STATUS;
-  status = napi_create_string_utf8(env, avfilter_license(), NAPI_AUTO_LENGTH, &value);
+  status = napi_create_string_utf8(env, ffmpeg_static_avfilter_license(), NAPI_AUTO_LENGTH, &value);
   CHECK_STATUS;
   status = napi_set_named_property(env, result, "avfilter", value);
   CHECK_STATUS;
-  status = napi_create_string_utf8(env, avformat_license(), NAPI_AUTO_LENGTH, &value);
+  status = napi_create_string_utf8(env, ffmpeg_static_avformat_license(), NAPI_AUTO_LENGTH, &value);
   CHECK_STATUS;
   status = napi_set_named_property(env, result, "avformat", value);
   CHECK_STATUS;
-  status = napi_create_string_utf8(env, avutil_license(), NAPI_AUTO_LENGTH, &value);
+  status = napi_create_string_utf8(env, ffmpeg_static_avutil_license(), NAPI_AUTO_LENGTH, &value);
   CHECK_STATUS;
   status = napi_set_named_property(env, result, "avutil", value);
   CHECK_STATUS;
-  status = napi_create_string_utf8(env, postproc_license(), NAPI_AUTO_LENGTH, &value);
+  status = napi_create_string_utf8(env, ffmpeg_static_postproc_license(), NAPI_AUTO_LENGTH, &value);
   CHECK_STATUS;
   status = napi_set_named_property(env, result, "postproc", value);
   CHECK_STATUS;
-  status = napi_create_string_utf8(env, swresample_license(), NAPI_AUTO_LENGTH, &value);
+  status = napi_create_string_utf8(env, ffmpeg_static_swresample_license(), NAPI_AUTO_LENGTH, &value);
   CHECK_STATUS;
   status = napi_set_named_property(env, result, "swresample", value);
   CHECK_STATUS;
-  status = napi_create_string_utf8(env, swscale_license(), NAPI_AUTO_LENGTH, &value);
+  status = napi_create_string_utf8(env, ffmpeg_static_swscale_license(), NAPI_AUTO_LENGTH, &value);
   CHECK_STATUS;
   status = napi_set_named_property(env, result, "swscale", value);
   CHECK_STATUS;
@@ -278,13 +278,13 @@ napi_status fromAVCodec(napi_env env, const AVCodec* codec, napi_value *result) 
   status = beam_set_string_utf8(env, value, "long_name", (char*) codec->long_name);
   PASS_STATUS;
   status = beam_set_string_utf8(env, value, "codec_type",
-    (char*) av_get_media_type_string(codec->type));
+    (char*) ffmpeg_static_av_get_media_type_string(codec->type));
   PASS_STATUS;
   status = beam_set_int32(env, value, "id", (int32_t) codec->id);
   PASS_STATUS;
-  status = beam_set_bool(env, value, "decoder", av_codec_is_decoder(codec));
+  status = beam_set_bool(env, value, "decoder", ffmpeg_static_av_codec_is_decoder(codec));
   PASS_STATUS;
-  status = beam_set_bool(env, value, "encoder", av_codec_is_encoder(codec));
+  status = beam_set_bool(env, value, "encoder", ffmpeg_static_av_codec_is_encoder(codec));
   PASS_STATUS;
 
   status = napi_create_object(env, &props);
@@ -362,7 +362,7 @@ napi_status fromAVCodec(napi_env env, const AVCodec* codec, napi_value *result) 
     index = 0;
     while (*pixfmt != -1) {
       status = napi_create_string_utf8(env,
-        (char*) av_get_pix_fmt_name(*pixfmt), NAPI_AUTO_LENGTH, &element);
+        (char*) ffmpeg_static_av_get_pix_fmt_name(*pixfmt), NAPI_AUTO_LENGTH, &element);
       PASS_STATUS;
       status = napi_set_element(env, array, index++, element);
       PASS_STATUS;
@@ -401,7 +401,7 @@ napi_status fromAVCodec(napi_env env, const AVCodec* codec, napi_value *result) 
     index = 0;
     while (*samplefmt != -1) {
       status = napi_create_string_utf8(env,
-        (char*) av_get_sample_fmt_name(*samplefmt), NAPI_AUTO_LENGTH, &element);
+        (char*) ffmpeg_static_av_get_sample_fmt_name(*samplefmt), NAPI_AUTO_LENGTH, &element);
       PASS_STATUS;
       status = napi_set_element(env, array, index++, element);
       PASS_STATUS;
@@ -421,7 +421,7 @@ napi_status fromAVCodec(napi_env env, const AVCodec* codec, napi_value *result) 
     index = 0;
     while (*chanlay != 0) {
       char chanLayStr[64];
-      av_get_channel_layout_string(chanLayStr, 64, 0, *chanlay);
+      ffmpeg_static_av_get_channel_layout_string(chanLayStr, 64, 0, *chanlay);
       status = napi_create_string_utf8(env, chanLayStr, NAPI_AUTO_LENGTH, &element);
       PASS_STATUS;
       status = napi_set_element(env, array, index++, element);
@@ -473,7 +473,7 @@ napi_status fromAVCodec(napi_env env, const AVCodec* codec, napi_value *result) 
     PASS_STATUS;
   }
 
-  codecDesc = avcodec_descriptor_get(codec->id);
+  codecDesc = ffmpeg_static_avcodec_descriptor_get(codec->id);
   if (codecDesc != nullptr) {
     status = fromAVCodecDescriptor(env, codecDesc, &element);
     PASS_STATUS;
@@ -494,7 +494,7 @@ napi_value codecs(napi_env env, napi_callback_info info) {
 
   status = napi_create_object(env, &result);
   CHECK_STATUS;
-  codec = av_codec_iterate(&opaque);
+  codec = ffmpeg_static_av_codec_iterate(&opaque);
   while (codec != nullptr) {
     status = fromAVCodec(env, codec, &value);
     CHECK_STATUS;
@@ -510,10 +510,10 @@ napi_value codecs(napi_env env, napi_callback_info info) {
       CHECK_STATUS;
     }
     status = napi_set_named_property(env, decEnc,
-      av_codec_is_decoder(codec) ? "decoder" : "encoder", value);
+      ffmpeg_static_av_codec_is_decoder(codec) ? "decoder" : "encoder", value);
     CHECK_STATUS;
 
-    codec = av_codec_iterate(&opaque);
+    codec = ffmpeg_static_av_codec_iterate(&opaque);
   }
 
   return result;
@@ -527,16 +527,16 @@ napi_value decoders(napi_env env, napi_callback_info info) {
 
   status = napi_create_object(env, &result);
   CHECK_STATUS;
-  codec = av_codec_iterate(&opaque);
+  codec = ffmpeg_static_av_codec_iterate(&opaque);
   while (codec != nullptr) {
-    if (av_codec_is_decoder(codec)) {
+    if (ffmpeg_static_av_codec_is_decoder(codec)) {
       status = fromAVCodec(env, codec, &value);
       CHECK_STATUS;
       status = napi_set_named_property(env, result, codec->name, value);
       CHECK_STATUS;
     }
 
-    codec = av_codec_iterate(&opaque);
+    codec = ffmpeg_static_av_codec_iterate(&opaque);
   }
 
   return result;
@@ -550,16 +550,16 @@ napi_value encoders(napi_env env, napi_callback_info info) {
 
   status = napi_create_object(env, &result);
   CHECK_STATUS;
-  codec = av_codec_iterate(&opaque);
+  codec = ffmpeg_static_av_codec_iterate(&opaque);
   while (codec != nullptr) {
-    if (av_codec_is_encoder(codec)) {
+    if (ffmpeg_static_av_codec_is_encoder(codec)) {
       status = fromAVCodec(env, codec, &value);
       CHECK_STATUS;
       status = napi_set_named_property(env, result, codec->name, value);
       CHECK_STATUS;
     }
 
-    codec = av_codec_iterate(&opaque);
+    codec = ffmpeg_static_av_codec_iterate(&opaque);
   }
 
   return result;
@@ -572,7 +572,7 @@ napi_value pix_fmts(napi_env env, napi_callback_info info) {
 
   status = napi_create_object(env, &result);
   CHECK_STATUS;
-  while ((desc = av_pix_fmt_desc_next(desc))) {
+  while ((desc = ffmpeg_static_av_pix_fmt_desc_next(desc))) {
     status = napi_create_object(env, &pixfmt);
     CHECK_STATUS;
     status = beam_set_string_utf8(env, pixfmt, "name", (char*) desc->name);
@@ -672,7 +672,7 @@ napi_value protocols(napi_env env, napi_callback_info info) {
   status = napi_create_array(env, &outputs);
   CHECK_STATUS;
 
-  while ((protocol = avio_enum_protocols(&opaque, 0))) {
+  while ((protocol = ffmpeg_static_avio_enum_protocols(&opaque, 0))) {
     status = napi_create_string_utf8(env, (char*) protocol, NAPI_AUTO_LENGTH, &element);
     CHECK_STATUS;
     status = napi_set_element(env, inputs, pos++, element);
@@ -681,7 +681,7 @@ napi_value protocols(napi_env env, napi_callback_info info) {
 
   opaque = nullptr;
   pos = 0;
-  while ((protocol = avio_enum_protocols(&opaque, 1))) {
+  while ((protocol = ffmpeg_static_avio_enum_protocols(&opaque, 1))) {
     status = napi_create_string_utf8(env, (char*) protocol, NAPI_AUTO_LENGTH, &element);
     CHECK_STATUS;
     status = napi_set_element(env, outputs, pos++, element);
@@ -706,7 +706,7 @@ napi_value filters(napi_env env, napi_callback_info info) {
   status = napi_create_object(env, &result);
   CHECK_STATUS;
 
-  while ((filter = av_filter_iterate(&opaque))) {
+  while ((filter = ffmpeg_static_av_filter_iterate(&opaque))) {
     status = napi_create_object(env, &desc);
     CHECK_STATUS;
     status = beam_set_string_utf8(env, desc, "name", (char*) filter->name);
@@ -716,15 +716,15 @@ napi_value filters(napi_env env, napi_callback_info info) {
 
     status = napi_create_array(env, &pads);
     CHECK_STATUS;
-    padCount = avfilter_filter_pad_count(filter, false);
+    padCount = ffmpeg_static_avfilter_filter_pad_count(filter, false);
     for ( int x = 0 ; x < padCount ; x++ ) {
       status = napi_create_object(env, &pad);
       CHECK_STATUS;
       status = beam_set_string_utf8(env, pad, "name",
-        (char*) avfilter_pad_get_name(filter->inputs, x));
+        (char*) ffmpeg_static_avfilter_pad_get_name(filter->inputs, x));
       CHECK_STATUS;
       status = beam_set_string_utf8(env, pad, "media_type",
-        (char*) av_get_media_type_string(avfilter_pad_get_type(filter->inputs, x)));
+        (char*) ffmpeg_static_av_get_media_type_string(ffmpeg_static_avfilter_pad_get_type(filter->inputs, x)));
       CHECK_STATUS;
       status = napi_set_element(env, pads, x, pad);
       CHECK_STATUS;
@@ -734,15 +734,15 @@ napi_value filters(napi_env env, napi_callback_info info) {
 
     status = napi_create_array(env, &pads);
     CHECK_STATUS;
-    padCount = avfilter_filter_pad_count(filter, true);
+    padCount = ffmpeg_static_avfilter_filter_pad_count(filter, true);
     for ( int x = 0 ; x < padCount ; x++ ) {
       status = napi_create_object(env, &pad);
       CHECK_STATUS;
       status = beam_set_string_utf8(env, pad, "name",
-        (char*) avfilter_pad_get_name(filter->outputs, x));
+        (char*) ffmpeg_static_avfilter_pad_get_name(filter->outputs, x));
       CHECK_STATUS;
       status = beam_set_string_utf8(env, pad, "media_type",
-        (char*) av_get_media_type_string(avfilter_pad_get_type(filter->outputs, x)));
+        (char*) ffmpeg_static_av_get_media_type_string(ffmpeg_static_avfilter_pad_get_type(filter->outputs, x)));
       CHECK_STATUS;
       status = napi_set_element(env, pads, x, pad);
       CHECK_STATUS;
@@ -799,7 +799,7 @@ napi_value bsfs(napi_env env, napi_callback_info info) {
   status = napi_create_object(env, &result);
   CHECK_STATUS;
 
-  while ((bsf = av_bsf_iterate(&opaque))) {
+  while ((bsf = ffmpeg_static_av_bsf_iterate(&opaque))) {
     status = napi_create_object(env, &desc);
     CHECK_STATUS;
     status = beam_set_string_utf8(env, desc, "name", (char*) bsf->name);
@@ -812,7 +812,7 @@ napi_value bsfs(napi_env env, napi_callback_info info) {
       pos = 0;
       while (*codecID != AV_CODEC_ID_NONE) {
         status = napi_create_string_utf8(env,
-          (char*) avcodec_get_name(*codecID), NAPI_AUTO_LENGTH, &codec);
+          (char*) ffmpeg_static_avcodec_get_name(*codecID), NAPI_AUTO_LENGTH, &codec);
         CHECK_STATUS;
         status = napi_set_element(env, codecs, pos++, codec);
         CHECK_STATUS;
@@ -849,7 +849,7 @@ napi_value sampleFormats(napi_env env, napi_callback_info info) {
   status = napi_create_object(env, &result);
   CHECK_STATUS;
 
-  while ((name = av_get_sample_fmt_name((AVSampleFormat) count))) {
+  while ((name = ffmpeg_static_av_get_sample_fmt_name((AVSampleFormat) count))) {
     status = napi_create_object(env, &value);
     CHECK_STATUS;
     status = beam_set_string_utf8(env, value, "type", "SampleFormat");
@@ -857,16 +857,16 @@ napi_value sampleFormats(napi_env env, napi_callback_info info) {
     status = beam_set_string_utf8(env, value, "name", (char*) name);
     CHECK_STATUS;
     status = beam_set_string_utf8(env, value, "packed",
-      (char*) av_get_sample_fmt_name(av_get_packed_sample_fmt((AVSampleFormat) count)));
+      (char*) ffmpeg_static_av_get_sample_fmt_name(ffmpeg_static_av_get_packed_sample_fmt((AVSampleFormat) count)));
     CHECK_STATUS;
     status = beam_set_string_utf8(env, value, "planar",
-      (char*) av_get_sample_fmt_name(av_get_planar_sample_fmt((AVSampleFormat) count)));
+      (char*) ffmpeg_static_av_get_sample_fmt_name(ffmpeg_static_av_get_planar_sample_fmt((AVSampleFormat) count)));
     CHECK_STATUS;
     status = beam_set_int32(env, value, "bytes_per_sample",
-      av_get_bytes_per_sample((AVSampleFormat) count));
+      ffmpeg_static_av_get_bytes_per_sample((AVSampleFormat) count));
     CHECK_STATUS;
     status = beam_set_bool(env, value, "is_planar",
-      av_sample_fmt_is_planar((AVSampleFormat) count));
+      ffmpeg_static_av_sample_fmt_is_planar((AVSampleFormat) count));
     CHECK_STATUS;
     status = napi_set_named_property(env, result, name, value);
     CHECK_STATUS;
@@ -921,14 +921,14 @@ napi_value Init(napi_env env, napi_value exports) {
   status = napi_define_properties(env, exports, 29, desc);
   CHECK_STATUS;
 
-  avdevice_register_all();
-  avformat_network_init();
+  ffmpeg_static_avdevice_register_all();
+  ffmpeg_static_avformat_network_init();
 
   // Iterate over all codecs to makes sure they are registered
   void* opaque = nullptr;
   const AVCodec* codec;
   do {
-    codec = av_codec_iterate(&opaque);
+    codec = ffmpeg_static_av_codec_iterate(&opaque);
     // printf("Registered '%s'\n", (codec != nullptr) ? codec->name : "(null)");
   } while (codec != nullptr);
   return exports;

@@ -61,17 +61,17 @@ struct demuxerCarrier : carrier {
   AVInputFormat* iformat = nullptr;
   AVDictionary* options = nullptr;
   ~demuxerCarrier() {
-    if (format != nullptr) { avformat_close_input(&format); }
-    if (options != nullptr) { av_dict_free(&options); }
+    if (format != nullptr) { ffmpeg_static_avformat_close_input(&format); }
+    if (options != nullptr) { ffmpeg_static_av_dict_free(&options); }
   }
 };
 
 struct readFrameCarrier : carrier {
   fmtCtxRef* formatRef = nullptr;
   Adaptor *adaptor = nullptr;
-  AVPacket* packet = av_packet_alloc();
+  AVPacket* packet = ffmpeg_static_av_packet_alloc();
   ~readFrameCarrier() {
-    if (packet != nullptr) av_packet_free(&packet);
+    if (packet != nullptr) ffmpeg_static_av_packet_free(&packet);
   }
 };
 
