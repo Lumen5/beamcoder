@@ -157,6 +157,9 @@
         "-lm",
         "-lpthread",
         "-ldl"
+      ],
+      "ldflags": [
+        "-Wl,--version-script=<(module_root_dir)/exports.map"
       ]
     }],
   ]
