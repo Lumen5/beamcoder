@@ -52,8 +52,8 @@ void encoderFinalizer(napi_env env, void* data, void* hint);
   int32_t codecID = -1;
   ~encoderCarrier() {
     if (encoder != nullptr) {
-      ffmpeg_static_avcodec_close(encoder);
-      ffmpeg_static_avcodec_free_context(&encoder);
+      avcodec_close(encoder);
+      avcodec_free_context(&encoder);
     }
 }
 }; */

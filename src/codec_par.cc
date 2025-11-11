@@ -30,7 +30,7 @@ napi_value getCodecParCodecType(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**) &c);
   CHECK_STATUS;
 
-  enumName = ffmpeg_static_av_get_media_type_string(c->codec_type);
+  enumName = av_get_media_type_string(c->codec_type);
   status = napi_create_string_utf8(env,
     (enumName != nullptr) ? (char*) enumName : "data",
     NAPI_AUTO_LENGTH, &result);
@@ -127,7 +127,7 @@ napi_value getCodecParName(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**) &c);
   CHECK_STATUS;
 
-  status = napi_create_string_utf8(env, (char*) ffmpeg_static_avcodec_get_name(c->codec_id),
+  status = napi_create_string_utf8(env, (char*) avcodec_get_name(c->codec_id),
     NAPI_AUTO_LENGTH, &result);
   CHECK_STATUS;
 
@@ -162,7 +162,7 @@ napi_value setCodecParName(napi_env env, napi_callback_info info) {
   codecName = (char*) malloc(sizeof(char) * (nameLen + 1));
   status = napi_get_value_string_utf8(env, args[0], codecName, nameLen + 1, &nameLen);
   CHECK_STATUS;
-  codecDesc = ffmpeg_static_avcodec_descriptor_get_by_name((const char *) codecName);
+  codecDesc = avcodec_descriptor_get_by_name((const char *) codecName);
   CHECK_STATUS;
   if (codecDesc == nullptr) {
     c->codec_id = AV_CODEC_ID_NONE;
@@ -188,7 +188,7 @@ napi_value getCodecParCodecTag(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**) &c);
   CHECK_STATUS;
 
-  ffmpeg_static_av_fourcc_make_string(fourcc, c->codec_tag);
+  av_fourcc_make_string(fourcc, c->codec_tag);
   if (strchr(fourcc, '[')) { // not a recognised tag
     status = napi_create_uint32(env, c->codec_tag, &result);
     CHECK_STATUS;
@@ -232,9 +232,9 @@ napi_value setCodecParCodecTag(napi_env env, napi_callback_info info) {
     printf("Setting codec parameters codec_tag expects a string or a number - attempting to set from codec_id\n");
     if ((AVMEDIA_TYPE_VIDEO == c->codec_type) || (AVMEDIA_TYPE_AUDIO == c->codec_type)) {
       const struct AVCodecTag *table[] = { 
-        (AVMEDIA_TYPE_VIDEO == c->codec_type) ? ffmpeg_static_avformat_get_riff_video_tags() : ffmpeg_static_avformat_get_riff_audio_tags(), 0
+        (AVMEDIA_TYPE_VIDEO == c->codec_type) ? avformat_get_riff_video_tags() : avformat_get_riff_audio_tags(), 0
       };
-      if (0 == ffmpeg_static_av_codec_get_tag2(table, c->codec_id, &c->codec_tag))
+      if (0 == av_codec_get_tag2(table, c->codec_id, &c->codec_tag))
         NAPI_THROW_ERROR("Codec parameters codec_tag could not be set.");
       printf("Setting codec parameters codec_tag to 0x%08x\n", c->codec_tag);
     } else
@@ -287,7 +287,7 @@ napi_value setCodecParExtraData(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
   if (type == napi_null) {
     if (codecPar->extradata_size > 0) { // Tidy up old buffers
-      ffmpeg_static_av_freep(&codecPar->extradata);
+      av_freep(&codecPar->extradata);
     }
     codecPar->extradata_size = 0;
     goto done;
@@ -318,10 +318,10 @@ napi_value setCodecParExtraData(napi_env env, napi_callback_info info) {
   status = napi_get_buffer_info(env, args[0], (void**) &data, &dataLen);
   CHECK_STATUS;
   if (codecPar->extradata_size > 0) { // Tidy up old buffers
-    ffmpeg_static_av_freep(&codecPar->extradata);
+    av_freep(&codecPar->extradata);
     codecPar->extradata_size = 0;
   }
-  codecPar->extradata = (uint8_t*) ffmpeg_static_av_mallocz(dataLen + AV_INPUT_BUFFER_PADDING_SIZE);
+  codecPar->extradata = (uint8_t*) av_mallocz(dataLen + AV_INPUT_BUFFER_PADDING_SIZE);
   codecPar->extradata_size = dataLen;
   memcpy(codecPar->extradata, data, dataLen);
 
@@ -342,15 +342,15 @@ napi_value getCodecParFormat(napi_env env, napi_callback_info info) {
 
   switch (c->codec_type) {
     case AVMEDIA_TYPE_VIDEO:
-      fmtName = ffmpeg_static_av_get_pix_fmt_name((AVPixelFormat) c->format);
+      fmtName = av_get_pix_fmt_name((AVPixelFormat) c->format);
       break;
     case AVMEDIA_TYPE_AUDIO:
-      fmtName = ffmpeg_static_av_get_sample_fmt_name((AVSampleFormat) c->format);
+      fmtName = av_get_sample_fmt_name((AVSampleFormat) c->format);
       break;
     default: // Might not have media type set
-      fmtName = ffmpeg_static_av_get_pix_fmt_name((AVPixelFormat) c->format);
+      fmtName = av_get_pix_fmt_name((AVPixelFormat) c->format);
       if (fmtName == nullptr) {
-        fmtName = ffmpeg_static_av_get_sample_fmt_name((AVSampleFormat) c->format);
+        fmtName = av_get_sample_fmt_name((AVSampleFormat) c->format);
       }
       break;
   }
@@ -400,15 +400,15 @@ napi_value setCodecParFormat(napi_env env, napi_callback_info info) {
 
   switch (c->codec_type) {
     case AVMEDIA_TYPE_VIDEO:
-      format = (int) ffmpeg_static_av_get_pix_fmt((const char *) formatName);
+      format = (int) av_get_pix_fmt((const char *) formatName);
       break;
     case AVMEDIA_TYPE_AUDIO:
-      format = (int) ffmpeg_static_av_get_sample_fmt((const char *) formatName);
+      format = (int) av_get_sample_fmt((const char *) formatName);
       break;
     default: // codec_type may not have been set yet ... guess mode
-      format = (int) ffmpeg_static_av_get_pix_fmt((const char *) formatName);
+      format = (int) av_get_pix_fmt((const char *) formatName);
       if (format == AV_PIX_FMT_NONE) {
-        format = (int) ffmpeg_static_av_get_sample_fmt((const char *) formatName);
+        format = (int) av_get_sample_fmt((const char *) formatName);
       }
       break;
   }
@@ -601,7 +601,7 @@ napi_value getCodecParColorRange(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**) &c);
   CHECK_STATUS;
 
-  enumName = ffmpeg_static_av_color_range_name(c->color_range);
+  enumName = av_color_range_name(c->color_range);
   status = napi_create_string_utf8(env,
     (enumName != nullptr) ? (char*) enumName : "unknown", NAPI_AUTO_LENGTH, &result);
   CHECK_STATUS;
@@ -642,7 +642,7 @@ napi_value setCodecParColorRange(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, args[0], enumString, strLen + 1, &strLen);
   CHECK_STATUS;
 
-  enumValue = ffmpeg_static_av_color_range_from_name((const char *) enumString);
+  enumValue = av_color_range_from_name((const char *) enumString);
   free(enumString);
   if (enumValue < 0) {
     NAPI_THROW_ERROR("Codec parameter color_range is not recognised. One of 'tv' or 'pc'?");
@@ -665,7 +665,7 @@ napi_value getCodecParColorPrims(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**) &c);
   CHECK_STATUS;
 
-  enumName = ffmpeg_static_av_color_primaries_name(c->color_primaries);
+  enumName = av_color_primaries_name(c->color_primaries);
   status = napi_create_string_utf8(env,
     (enumName != nullptr) ? (char*) enumName : "unknown",
     NAPI_AUTO_LENGTH, &result);
@@ -707,7 +707,7 @@ napi_value setCodecParColorPrims(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, args[0], enumString, strLen + 1, &strLen);
   CHECK_STATUS;
 
-  enumValue = ffmpeg_static_av_color_primaries_from_name((const char *) enumString);
+  enumValue = av_color_primaries_from_name((const char *) enumString);
   free(enumString);
   if (enumValue < 0) {
     NAPI_THROW_ERROR("Codec parameter color_primaries is not recognised. Did you mean e.g. 'bt709'?");
@@ -729,7 +729,7 @@ napi_value getCodecParColorTrc(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**) &c);
   CHECK_STATUS;
 
-  enumName = ffmpeg_static_av_color_transfer_name(c->color_trc);
+  enumName = av_color_transfer_name(c->color_trc);
   status = napi_create_string_utf8(env,
     (enumName != nullptr) ? (char*) enumName : "unknown",
     NAPI_AUTO_LENGTH, &result);
@@ -771,7 +771,7 @@ napi_value setCodecParColorTrc(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, args[0], enumString, strLen + 1, &strLen);
   CHECK_STATUS;
 
-  enumValue = ffmpeg_static_av_color_transfer_from_name((const char *) enumString);
+  enumValue = av_color_transfer_from_name((const char *) enumString);
   free(enumString);
   if (enumValue < 0) {
     NAPI_THROW_ERROR("Codec parameter color_trc is not recognised. Did you mean e.g. 'bt709'?");
@@ -794,7 +794,7 @@ napi_value getCodecParColorSpace(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**) &c);
   CHECK_STATUS;
 
-  enumName = ffmpeg_static_av_color_space_name(c->color_space);
+  enumName = av_color_space_name(c->color_space);
   status = napi_create_string_utf8(env,
     (enumName != nullptr) ? (char*) enumName : "unknown",
     NAPI_AUTO_LENGTH, &result);
@@ -836,7 +836,7 @@ napi_value setCodecParColorSpace(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, args[0], enumString, strLen + 1, &strLen);
   CHECK_STATUS;
 
-  enumValue = ffmpeg_static_av_color_space_from_name((const char *) enumString);
+  enumValue = av_color_space_from_name((const char *) enumString);
   free(enumString);
   if (enumValue < 0) {
     NAPI_THROW_ERROR("Codec parameter color_space is not recognised. Did you mean e.g. 'bt709'?");
@@ -858,7 +858,7 @@ napi_value getCodecParChromaLoc(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**) &c);
   CHECK_STATUS;
 
-  enumName = ffmpeg_static_av_chroma_location_name(c->chroma_location);
+  enumName = av_chroma_location_name(c->chroma_location);
   status = napi_create_string_utf8(env,
     (enumName != nullptr) ? (char*) enumName : "unspecified",
     NAPI_AUTO_LENGTH, &result);
@@ -900,7 +900,7 @@ napi_value setCodecParChromaLoc(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, args[0], enumString, strLen + 1, &strLen);
   CHECK_STATUS;
 
-  enumValue = ffmpeg_static_av_chroma_location_from_name((const char *) enumString);
+  enumValue = av_chroma_location_from_name((const char *) enumString);
   free(enumString);
   if (enumValue < 0) {
     NAPI_THROW_ERROR("Codec parameter chroma_location is not recognised. Did you mean e.g. 'left'?");
@@ -922,8 +922,8 @@ napi_value getCodecParChanLayout(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**) &c);
   CHECK_STATUS;
 
-  ffmpeg_static_av_get_channel_layout_string(enumName, 64, 0,
-    c->channel_layout ? c->channel_layout : ffmpeg_static_av_get_default_channel_layout(c->channels));
+  av_get_channel_layout_string(enumName, 64, 0,
+    c->channel_layout ? c->channel_layout : av_get_default_channel_layout(c->channels));
   status = napi_create_string_utf8(env, enumName, NAPI_AUTO_LENGTH, &result);
   CHECK_STATUS;
 
@@ -962,7 +962,7 @@ napi_value setCodecParChanLayout(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, args[0], enumString, strLen + 1, &strLen);
   CHECK_STATUS;
 
-  chanLay = ffmpeg_static_av_get_channel_layout((const char *) enumString);
+  chanLay = av_get_channel_layout((const char *) enumString);
   free(enumString);
   if (chanLay != 0) {
     c->channel_layout = chanLay;
@@ -1512,7 +1512,7 @@ napi_value getCodecParProfile(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**) &c);
   CHECK_STATUS;
 
-  profName = ffmpeg_static_avcodec_profile_name(c->codec_id, c->profile);
+  profName = avcodec_profile_name(c->codec_id, c->profile);
   if (profName != nullptr) {
     status = napi_create_string_utf8(env, (char*) profName,
       NAPI_AUTO_LENGTH, &result);
@@ -1565,7 +1565,7 @@ napi_value setCodecParProfile(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, args[0], enumString, strLen + 1, &strLen);
   CHECK_STATUS;
 
-  codecDesc = ffmpeg_static_avcodec_descriptor_get(c->codec_id);
+  codecDesc = avcodec_descriptor_get(c->codec_id);
   if (codecDesc == nullptr) goto done;
   profile = codecDesc->profiles;
   if (!profile) {
@@ -1613,7 +1613,7 @@ napi_value makeCodecParamsInternal(napi_env env, napi_callback_info info, bool o
   napi_value result, global, jsObject, assign, jsJSON, jsParse;
   napi_valuetype type;
   bool isArray, deleted;
-  AVCodecParameters* c = ffmpeg_static_avcodec_parameters_alloc();
+  AVCodecParameters* c = avcodec_parameters_alloc();
 
   status = napi_get_global(env, &global);
   CHECK_STATUS;
@@ -1667,7 +1667,7 @@ napi_value makeCodecParamsInternal(napi_env env, napi_callback_info info, bool o
   }
 
   if ((c->codec_type == AVMEDIA_TYPE_UNKNOWN) && (c->codec_id != AV_CODEC_ID_NONE)) {
-    c->codec_type = ffmpeg_static_avcodec_get_type(c->codec_id);
+    c->codec_type = avcodec_get_type(c->codec_id);
   }
 
   return result;
@@ -1811,8 +1811,8 @@ napi_status fromAVCodecParameters(napi_env env, AVCodecParameters* c, bool ownAl
 void codecParamsFinalizer(napi_env env, void* data, void* hint) {
   AVCodecParameters* c = (AVCodecParameters*) data;
   // if ((c->extradata != nullptr) && (c->extradata_size > 0)) {
-  //   ffmpeg_static_av_freep(&c->extradata);
+  //   av_freep(&c->extradata);
   //   c->extradata_size = 0;
   // }
-  ffmpeg_static_avcodec_parameters_free(&c);
+  avcodec_parameters_free(&c);
 }

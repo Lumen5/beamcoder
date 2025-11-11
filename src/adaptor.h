@@ -155,8 +155,8 @@ public:
     return status;
   }
 
-  // convenience buffer for ffmpeg_static_avio_alloc_context
-  //  - it shouldn't be needed but ffmpeg_static_avformat_write_header crashes if no buffer is provided
+  // convenience buffer for avio_alloc_context
+  //  - it shouldn't be needed but avformat_write_header crashes if no buffer is provided
   unsigned char *buf()  { return &mBuf[0]; }
   int bufLen() const  { return (int)mBuf.size(); }
 

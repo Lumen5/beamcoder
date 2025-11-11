@@ -134,7 +134,7 @@ napi_value getPacketData(napi_env env, napi_callback_info info) {
   if (p->packet->buf == nullptr) {
     status = napi_get_null(env, &result);
   } else {
-    hintRef = ffmpeg_static_av_buffer_ref(p->packet->buf);
+    hintRef = av_buffer_ref(p->packet->buf);
     status = napi_create_external_buffer(env, hintRef->size, hintRef->data,
       packetBufferFinalizer, hintRef, &result);
     CHECK_STATUS;
@@ -171,7 +171,7 @@ napi_value setPacketData(napi_env env, napi_callback_info info) {
       p->dataRef = nullptr;
     }
     if (p->packet->buf != nullptr) {
-      ffmpeg_static_av_buffer_unref(&p->packet->buf); // sets it to null
+      av_buffer_unref(&p->packet->buf); // sets it to null
     }
     p->packet->data = nullptr;
     goto done;
@@ -195,9 +195,9 @@ napi_value setPacketData(napi_env env, napi_callback_info info) {
   status = napi_get_buffer_info(env, args[0], (void**) &data, &length);
   CHECK_STATUS;
   if (p->packet->buf != nullptr) {
-    ffmpeg_static_av_buffer_unref(&p->packet->buf);
+    av_buffer_unref(&p->packet->buf);
   }
-  p->packet->buf = ffmpeg_static_av_buffer_create(data, length, packetBufferFree, avr, 0);
+  p->packet->buf = av_buffer_create(data, length, packetBufferFree, avr, 0);
   CHECK_STATUS;
   p->packet->data = data;
 
@@ -441,7 +441,7 @@ napi_value setPacketSideData(napi_env env, napi_callback_info info) {
     case napi_object:
     case napi_null:
     case napi_undefined:
-      ffmpeg_static_av_packet_free_side_data(p->packet);
+      av_packet_free_side_data(p->packet);
       if (type != napi_object) { goto done; };
       break;
     default:
@@ -487,7 +487,7 @@ napi_value setPacketSideData(napi_env env, napi_callback_info info) {
     } else {
       status = napi_get_buffer_info(env, element, &rawdata, &rawdataSize);
       CHECK_STATUS;
-      uint8_t* pktdata = ffmpeg_static_av_packet_new_side_data(p->packet,
+      uint8_t* pktdata = av_packet_new_side_data(p->packet,
         (AVPacketSideDataType) psdt, rawdataSize);
       if (pktdata != nullptr) {
         memcpy(pktdata, rawdata, rawdataSize);
@@ -587,7 +587,7 @@ napi_value makePacket(napi_env env, napi_callback_info info) {
   napi_valuetype type;
   bool isArray, deleted;
   packetData* p = new packetData;
-  p->packet = ffmpeg_static_av_packet_alloc();
+  p->packet = av_packet_alloc();
 
   status = napi_get_global(env, &global);
   CHECK_STATUS;
@@ -734,7 +734,7 @@ napi_status fromAVPacket(napi_env env, packetData* p, napi_value* result) {
 
 void packetFinalizer(napi_env env, void* data, void* hint) {
   AVPacket* pkt = (AVPacket*) data;
-  ffmpeg_static_av_packet_free(&pkt);
+  av_packet_free(&pkt);
 }
 
 void packetDataFinalizer(napi_env env, void* data, void* hint) {
@@ -758,5 +758,5 @@ void packetDataFinalizer(napi_env env, void* data, void* hint) {
 
 void packetBufferFinalizer(napi_env env, void* data, void* hint) {
   AVBufferRef* hintRef = (AVBufferRef*) hint;
-  ffmpeg_static_av_buffer_unref(&hintRef);
+  av_buffer_unref(&hintRef);
 };

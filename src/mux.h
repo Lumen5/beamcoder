@@ -61,7 +61,7 @@ struct openIOCarrier : carrier {
   int flags = AVIO_FLAG_WRITE;
   AVDictionary* options = nullptr;
   ~openIOCarrier() {
-    if (options != nullptr) ffmpeg_static_av_dict_free(&options);
+    if (options != nullptr) av_dict_free(&options);
   }
 };
 
@@ -70,7 +70,7 @@ struct writeHeaderCarrier : carrier {
   AVDictionary* options = nullptr;
   int result = -1;
   ~writeHeaderCarrier() {
-    if (options != nullptr) ffmpeg_static_av_dict_free(&options);
+    if (options != nullptr) av_dict_free(&options);
   }
 };
 
@@ -79,7 +79,7 @@ struct initOutputCarrier : carrier {
   AVDictionary* options = nullptr;
   int result = -1;
   ~initOutputCarrier() {
-    if (options != nullptr) ffmpeg_static_av_dict_free(&options);
+    if (options != nullptr) av_dict_free(&options);
   }
 };
 
@@ -91,8 +91,8 @@ struct writeFrameCarrier : carrier {
   int streamIndex = 0;
   bool interleaved = true;
   ~writeFrameCarrier() {
-    if (packet != nullptr) { ffmpeg_static_av_packet_free(&packet); }
-    if (frame != nullptr) { ffmpeg_static_av_frame_free(&frame); }
+    if (packet != nullptr) { av_packet_free(&packet); }
+    if (frame != nullptr) { av_frame_free(&frame); }
   }
 };
 

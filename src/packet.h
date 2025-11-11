@@ -39,7 +39,7 @@ struct packetData {
   napi_ref dataRef = nullptr;
   int32_t extSize = 0;
   ~packetData() {
-    ffmpeg_static_av_packet_free(&packet);
+    av_packet_free(&packet);
   }
 };
 

@@ -225,10 +225,10 @@ napi_value getFrameFormat(napi_env env, napi_callback_info info) {
 
   // Assume audio data using FFmpeg's own technique
   if (f->frame->nb_samples > 0 && (f->frame->channel_layout || f->frame->channels > 0)) {
-    name = ffmpeg_static_av_get_sample_fmt_name((AVSampleFormat) f->frame->format);
+    name = av_get_sample_fmt_name((AVSampleFormat) f->frame->format);
   }
   if (name == nullptr) { // Assume that it is video data
-    name = ffmpeg_static_av_get_pix_fmt_name((AVPixelFormat) f->frame->format);
+    name = av_get_pix_fmt_name((AVPixelFormat) f->frame->format);
   }
   if (name == nullptr) {
     status = napi_get_null(env, &result);
@@ -273,9 +273,9 @@ napi_value setFrameFormat(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
 
   // TODO this may give surprising results
-  format = (int) ffmpeg_static_av_get_pix_fmt( name);
+  format = (int) av_get_pix_fmt( name);
   if (format == AV_PIX_FMT_NONE) {
-    format = (int) ffmpeg_static_av_get_sample_fmt((const char*) name);
+    format = (int) av_get_sample_fmt((const char*) name);
     if ((format != AV_SAMPLE_FMT_NONE) && (f->frame->nb_samples == 0)) {
       f->frame->nb_samples = 1; // Cludge ... found a sample format ... force audio mode
       f->frame->channels = 1;
@@ -999,8 +999,8 @@ napi_value getFrameChanLayout(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
 
   char channelLayoutName[64];
-  ffmpeg_static_av_get_channel_layout_string(channelLayoutName, 64, 0, 
-    f->frame->channel_layout ? f->frame->channel_layout : ffmpeg_static_av_get_default_channel_layout(f->frame->channels));
+  av_get_channel_layout_string(channelLayoutName, 64, 0, 
+    f->frame->channel_layout ? f->frame->channel_layout : av_get_default_channel_layout(f->frame->channels));
 
   status = napi_create_string_utf8(env, channelLayoutName, NAPI_AUTO_LENGTH, &result);
   CHECK_STATUS;
@@ -1038,7 +1038,7 @@ napi_value setFrameChanLayout(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, args[0], name, len + 1, &len);
   CHECK_STATUS;
 
-  f->frame->channel_layout = ffmpeg_static_av_get_channel_layout(name);
+  f->frame->channel_layout = av_get_channel_layout(name);
   free(name);
 
 done:
@@ -1063,7 +1063,7 @@ napi_value getFrameData(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
 
   data = f->frame->data[0];
-  ref = f->frame->buf[0] ? ffmpeg_static_av_buffer_ref(f->frame->buf[0]) : nullptr;
+  ref = f->frame->buf[0] ? av_buffer_ref(f->frame->buf[0]) : nullptr;
   size = ref ? ref->size : 0;
   curElem = 0;
   // work through frame bufs checking whether allocation refcounts are shared
@@ -1079,7 +1079,7 @@ napi_value getFrameData(napi_env env, napi_callback_info info) {
     CHECK_STATUS;
     data = f->frame->data[x];
     if (f->frame->buf[x]) {
-      ref = ffmpeg_static_av_buffer_ref(f->frame->buf[x]);
+      ref = av_buffer_ref(f->frame->buf[x]);
       size = ref->size;
     } else {
       ref = nullptr;
@@ -1128,7 +1128,7 @@ napi_value setFrameData(napi_env env, napi_callback_info info) {
     f->dataRefs.clear();
     for ( uint32_t x = 0 ; x < AV_NUM_DATA_POINTERS ; x++) {
       if (f->frame->buf[x] != nullptr) {
-        ffmpeg_static_av_buffer_unref(&f->frame->buf[x]);
+        av_buffer_unref(&f->frame->buf[x]);
       }
       f->frame->data[x] = nullptr;
     }
@@ -1159,13 +1159,13 @@ napi_value setFrameData(napi_env env, napi_callback_info info) {
   f->dataRefs.clear();
   for ( uint32_t x = 0 ; x < AV_NUM_DATA_POINTERS ; x++) {
     if (f->frame->buf[x] != nullptr) {
-      ffmpeg_static_av_buffer_unref(&f->frame->buf[x]);
+      av_buffer_unref(&f->frame->buf[x]);
     }
   }
   for ( uint32_t x = 0 ; x < AV_NUM_DATA_POINTERS ; x++) {
     if (x >= bufCount) {
       if (f->frame->buf[x] != nullptr) {
-        ffmpeg_static_av_buffer_unref(&f->frame->buf[x]); // sets pointer to null
+        av_buffer_unref(&f->frame->buf[x]); // sets pointer to null
       }
       f->frame->data[x] = nullptr;
       continue;
@@ -1185,7 +1185,7 @@ napi_value setFrameData(napi_env env, napi_callback_info info) {
     status = napi_get_buffer_info(env, element, (void**) &data, &length);
     CHECK_STATUS;
 
-    f->frame->buf[x] = ffmpeg_static_av_buffer_create(data, length, frameBufferFree, avr, 0);
+    f->frame->buf[x] = av_buffer_create(data, length, frameBufferFree, avr, 0);
     CHECK_STATUS;
     f->frame->data[x] = f->frame->buf[x]->data;
   }
@@ -1266,9 +1266,9 @@ napi_value setFrameSideData(napi_env env, napi_callback_info info) {
     case napi_undefined:
       if ((f->frame->side_data != nullptr) && (f->frame->nb_side_data > 0)) {
         for ( int x = 0 ; x < f->frame->nb_side_data ; x++) {
-          ffmpeg_static_av_frame_remove_side_data(f->frame, f->frame->side_data[x]->type);
+          av_frame_remove_side_data(f->frame, f->frame->side_data[x]->type);
         }
-        ffmpeg_static_av_freep(&f->frame->data);
+        av_freep(&f->frame->data);
         f->frame->nb_side_data = 0;
       }
       if (type != napi_object) { goto done; };
@@ -1316,7 +1316,7 @@ napi_value setFrameSideData(napi_env env, napi_callback_info info) {
     } else {
       status = napi_get_buffer_info(env, element, &rawdata, &rawdataSize);
       CHECK_STATUS;
-      fsd = ffmpeg_static_av_frame_new_side_data(f->frame, (AVFrameSideDataType) fsdt, rawdataSize);
+      fsd = av_frame_new_side_data(f->frame, (AVFrameSideDataType) fsdt, rawdataSize);
       if (fsd != nullptr) {
         memcpy(fsd->data, rawdata, rawdataSize);
       }
@@ -1392,7 +1392,7 @@ napi_value getFrameColorRange(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**) &f);
   CHECK_STATUS;
 
-  enumName = ffmpeg_static_av_color_range_name(f->frame->color_range);
+  enumName = av_color_range_name(f->frame->color_range);
   status = napi_create_string_utf8(env,
     (enumName != nullptr) ? (char*) enumName : "unknown",
     NAPI_AUTO_LENGTH, &result);
@@ -1432,7 +1432,7 @@ napi_value setFrameColorRange(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, args[0], name, len + 1, &len);
   CHECK_STATUS;
 
-  ret = ffmpeg_static_av_color_range_from_name(name);
+  ret = av_color_range_from_name(name);
   free(name);
   if (ret < 0) {
     NAPI_THROW_ERROR("Color range was not recognised. Try one of 'tv' (MPEG), 'pc' (JPEG) or 'unknown'.");
@@ -1454,7 +1454,7 @@ napi_value getFrameColorPrimaries(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**) &f);
   CHECK_STATUS;
 
-  enumName = ffmpeg_static_av_color_primaries_name(f->frame->color_primaries);
+  enumName = av_color_primaries_name(f->frame->color_primaries);
   status = napi_create_string_utf8(env,
     (enumName != nullptr) ? (char*) enumName : "unknown",
     NAPI_AUTO_LENGTH, &result);
@@ -1494,7 +1494,7 @@ napi_value setFrameColorPrimaries(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, args[0], name, len + 1, &len);
   CHECK_STATUS;
 
-  ret = ffmpeg_static_av_color_primaries_from_name(name);
+  ret = av_color_primaries_from_name(name);
   free(name);
   if (ret < 0) {
     NAPI_THROW_ERROR("Color primaries not recognised. Did you mean e.g. 'bt709'?");
@@ -1516,7 +1516,7 @@ napi_value getFrameColorTrc(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**) &f);
   CHECK_STATUS;
 
-  enumName = ffmpeg_static_av_color_transfer_name(f->frame->color_trc);
+  enumName = av_color_transfer_name(f->frame->color_trc);
   status = napi_create_string_utf8(env,
     (enumName != nullptr) ? (char*) enumName : "unknown",
     NAPI_AUTO_LENGTH, &result);
@@ -1556,7 +1556,7 @@ napi_value setFrameColorTrc(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, args[0], name, len + 1, &len);
   CHECK_STATUS;
 
-  ret = ffmpeg_static_av_color_transfer_from_name(name);
+  ret = av_color_transfer_from_name(name);
   free(name);
   if (ret < 0) {
     NAPI_THROW_ERROR("Color transfer characteristic not recognised. Did you mean e.g. 'bt709'?");
@@ -1578,7 +1578,7 @@ napi_value getFrameColorspace(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**) &f);
   CHECK_STATUS;
 
-  enumName = ffmpeg_static_av_color_space_name(f->frame->colorspace);
+  enumName = av_color_space_name(f->frame->colorspace);
   status = napi_create_string_utf8(env,
     (enumName != nullptr) ? (char*) enumName : "unknown",
     NAPI_AUTO_LENGTH, &result);
@@ -1618,7 +1618,7 @@ napi_value setFrameColorspace(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, args[0], name, len + 1, &len);
   CHECK_STATUS;
 
-  ret = ffmpeg_static_av_color_space_from_name(name);
+  ret = av_color_space_from_name(name);
   free(name);
   if (ret < 0) {
     NAPI_THROW_ERROR("Colorspace not recognised. Did you mean e.g. 'bt709'?");
@@ -1640,7 +1640,7 @@ napi_value getFrameChromaLoc(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**) &f);
   CHECK_STATUS;
 
-  enumName = ffmpeg_static_av_chroma_location_name(f->frame->chroma_location);
+  enumName = av_chroma_location_name(f->frame->chroma_location);
   status = napi_create_string_utf8(env,
     (enumName != nullptr) ? (char*) enumName : "unspecified",
     NAPI_AUTO_LENGTH, &result);
@@ -1680,7 +1680,7 @@ napi_value setFrameChromaLoc(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, args[0], name, len + 1, &len);
   CHECK_STATUS;
 
-  ret = ffmpeg_static_av_chroma_location_from_name(name);
+  ret = av_chroma_location_from_name(name);
   free(name);
   if (ret < 0) {
     NAPI_THROW_ERROR("Chroma location not recognised. Did you mean e.g. 'left'?");
@@ -1836,7 +1836,7 @@ napi_value getFrameMetadata(napi_env env, napi_callback_info info) {
   if (f->frame->metadata != nullptr) {
     status = napi_create_object(env, &result);
     CHECK_STATUS;
-    while((tag = ffmpeg_static_av_dict_get(f->frame->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
+    while((tag = av_dict_get(f->frame->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
       status = beam_set_string_utf8(env, result, tag->key, tag->value);
       CHECK_STATUS;
     }
@@ -2063,7 +2063,7 @@ napi_value setFrameHWFramesCtx(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
   status = napi_get_value_external(env, contextExt, (void**) &contextRef);
   CHECK_STATUS;
-  f->frame->hw_frames_ctx = ffmpeg_static_av_buffer_ref(contextRef);
+  f->frame->hw_frames_ctx = av_buffer_ref(contextRef);
 
   status = napi_get_undefined(env, &result);
   CHECK_STATUS;
@@ -2236,8 +2236,8 @@ napi_value makeFrame(napi_env env, napi_callback_info info) {
   napi_valuetype type;
   bool isArray, deleted;
   frameData* f = new frameData;
-  f->frame = ffmpeg_static_av_frame_alloc();
-  int align = 32; // ffmpeg_static_av_cpu_max_align();
+  f->frame = av_frame_alloc();
+  int align = 32; // av_cpu_max_align();
 
   status = napi_get_global(env, &global);
   CHECK_STATUS;
@@ -2293,14 +2293,14 @@ napi_value makeFrame(napi_env env, napi_callback_info info) {
   // MAINTAIN: needs to track FFmpeg
   if (f->frame->format >= 0) { // set up some useful line sizes.
     if (f->frame->width > 0 && f->frame->height > 0) { // video
-      const AVPixFmtDescriptor *desc = ffmpeg_static_av_pix_fmt_desc_get((AVPixelFormat) f->frame->format);
+      const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get((AVPixelFormat) f->frame->format);
       int ret, i;
       if (!desc)
         NAPI_THROW_ERROR("Could not determine frame descriptor details.");
 
       if (!f->frame->linesize[0]) {
         for( i = 1 ; i <= align ; i += i) {
-          ret = ffmpeg_static_av_image_fill_linesizes(f->frame->linesize, (AVPixelFormat) f->frame->format,
+          ret = av_image_fill_linesizes(f->frame->linesize, (AVPixelFormat) f->frame->format,
                                             FFALIGN(f->frame->width, i));
           if (ret < 0)
             NAPI_THROW_ERROR("Failed to calculate line sizes.");
@@ -2314,12 +2314,12 @@ napi_value makeFrame(napi_env env, napi_callback_info info) {
     }
     else if (f->frame->nb_samples > 0 && (f->frame->channel_layout || f->frame->channels > 0)) {
       int channels;
-      // int planar = ffmpeg_static_av_sample_fmt_is_planar((AVSampleFormat) f->frame->format);
+      // int planar = av_sample_fmt_is_planar((AVSampleFormat) f->frame->format);
       // int planes;
       int ret;
 
       if (f->frame->channels < 2) { // Bump up from default of 1 if necessary
-        f->frame->channels = ffmpeg_static_av_get_channel_layout_nb_channels(f->frame->channel_layout);
+        f->frame->channels = av_get_channel_layout_nb_channels(f->frame->channel_layout);
         // printf("Calculated channel number %i\n", f->frame->channels);
       }
 
@@ -2328,7 +2328,7 @@ napi_value makeFrame(napi_env env, napi_callback_info info) {
 
       // TODO: is this needed? CHECK_CHANNELS_CONSISTENCY(f->frame);
       if (!f->frame->linesize[0]) {
-        ret = ffmpeg_static_av_samples_get_buffer_size(f->frame->linesize, channels,
+        ret = av_samples_get_buffer_size(f->frame->linesize, channels,
                                          f->frame->nb_samples, (AVSampleFormat) f->frame->format,
                                          0);
         if (ret < 0)
@@ -2358,7 +2358,7 @@ napi_value alloc(napi_env env, napi_callback_info info) {
       for ( int x = 0 ; x < AV_NUM_DATA_POINTERS ; x++ ) {
         if (f->frame->linesize[x] > 0) {
           int bufSize = f->frame->linesize[x] * f->frame->height;
-          f->frame->buf[x] = ffmpeg_static_av_buffer_alloc(
+          f->frame->buf[x] = av_buffer_alloc(
             (bufSize > AV_INPUT_BUFFER_MIN_SIZE) ? bufSize : AV_INPUT_BUFFER_MIN_SIZE);
           f->frame->data[x] = f->frame->buf[x]->data;
         } else {
@@ -2368,11 +2368,11 @@ napi_value alloc(napi_env env, napi_callback_info info) {
       }
     }
     else if (f->frame->nb_samples > 0 && (f->frame->channel_layout || f->frame->channels > 0)) {
-      int planar = ffmpeg_static_av_sample_fmt_is_planar((AVSampleFormat) f->frame->format);
+      int planar = av_sample_fmt_is_planar((AVSampleFormat) f->frame->format);
       if (planar) {
         for ( int x = 0 ; x < AV_NUM_DATA_POINTERS ; x++ ) {
           if (x < f->frame->channels) {
-            f->frame->buf[x] = ffmpeg_static_av_buffer_alloc(f->frame->linesize[0]);
+            f->frame->buf[x] = av_buffer_alloc(f->frame->linesize[0]);
             f->frame->data[x] = f->frame->buf[x]->data;
           } else {
             f->frame->buf[x] = nullptr;
@@ -2381,7 +2381,7 @@ napi_value alloc(napi_env env, napi_callback_info info) {
         }
       }
       else {
-        f->frame->buf[0] = ffmpeg_static_av_buffer_alloc(f->frame->linesize[0]);
+        f->frame->buf[0] = av_buffer_alloc(f->frame->linesize[0]);
         f->frame->data[0] = f->frame->buf[0]->data;
         for ( int x = 1 ; x < AV_NUM_DATA_POINTERS ; x++ ) {
           f->frame->buf[x] = nullptr;
@@ -2641,7 +2641,7 @@ napi_status fromAVFrame(napi_env env, frameData* f, napi_value* result) {
 
 void frameFinalizer(napi_env env, void* data, void* hint) {
   AVFrame* frame = (AVFrame*) data;
-  ffmpeg_static_av_frame_free(&frame);
+  av_frame_free(&frame);
   // printf("Freeing a frame.\n");
 }
 
@@ -2666,7 +2666,7 @@ void frameDataFinalizer(napi_env env, void* data, void* hint) {
 
 void frameBufferFinalizer(napi_env env, void* data, void* hint) {
   AVBufferRef* hintRef = (AVBufferRef*) hint;
-  ffmpeg_static_av_buffer_unref(&hintRef);
+  av_buffer_unref(&hintRef);
   // printf("Unreffing an AV buffer.\n");
 }
 

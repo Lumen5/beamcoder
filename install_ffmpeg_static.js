@@ -33,7 +33,7 @@ const FFMPEG_VERSION = '5.1.4';
 
 // GitHub repository with pre-built static libraries
 const GITHUB_REPO = 'Lumen5/ffmpeg-static';
-const GITHUB_BRANCH = 'lu-3883-test-prefixing';
+const GITHUB_BRANCH = 'main';
 
 // Get platform string for static library directory
 // Maps to the directory structure in ffmpeg-static: output/linux/{amd64,arm64}, output/darwin/arm64
@@ -118,7 +118,7 @@ async function downloadFFmpegStatic() {
   const ffmpegDir = path.join(__dirname, 'ffmpeg');
   const buildDir = path.join(ffmpegDir, 'ffmpeg-static-build');
   const tarPath = path.join(ffmpegDir, 'ffmpeg-static.tar.gz');
-  const extractDir = path.join(ffmpegDir, `ffmpeg-static-${GITHUB_BRANCH}`);
+  const extractDir = path.join(ffmpegDir, 'ffmpeg-static-main');
 
   // Clean up previous installation
   if (fs.existsSync(ffmpegDir)) {

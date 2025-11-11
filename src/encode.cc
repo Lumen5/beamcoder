@@ -76,7 +76,7 @@ napi_value encoder(napi_env env, napi_callback_info info) {
     }
     status = napi_get_value_external(env, jsParams, (void**) &codecParams);
     CHECK_STATUS;
-    codecName = (char*) ffmpeg_static_avcodec_get_name(codecParams->codec_id);
+    codecName = (char*) avcodec_get_name(codecParams->codec_id);
     codecNameLen = strlen(codecName);
     goto create;
   }
@@ -98,24 +98,24 @@ napi_value encoder(napi_env env, napi_callback_info info) {
 
 create:
   codec = ((codecID == -1) && (codecName != nullptr)) ?
-    ffmpeg_static_avcodec_find_encoder_by_name(codecName) :
-    ffmpeg_static_avcodec_find_encoder((AVCodecID) codecID);
+    avcodec_find_encoder_by_name(codecName) :
+    avcodec_find_encoder((AVCodecID) codecID);
   if ((codec == nullptr) && (codecID == -1)) { // one more go via codec descriptor
-    codecDesc = ffmpeg_static_avcodec_descriptor_get_by_name(codecName);
+    codecDesc = avcodec_descriptor_get_by_name(codecName);
     if (codecDesc != nullptr) {
-      codec = ffmpeg_static_avcodec_find_encoder(codecDesc->id);
+      codec = avcodec_find_encoder(codecDesc->id);
     }
   }
   if (codec == nullptr) {
     NAPI_THROW_ERROR("Failed to find an encoder from it's name or ID.");
   }
-  encoder = ffmpeg_static_avcodec_alloc_context3(codec);
+  encoder = avcodec_alloc_context3(codec);
   if (encoder == nullptr) {
     NAPI_THROW_ERROR("Problem allocating encoder context.");
   }
 
   if (codecParams != nullptr) {
-    if ((ret = ffmpeg_static_avcodec_parameters_to_context(encoder, (const AVCodecParameters*) codecParams))) {
+    if ((ret = avcodec_parameters_to_context(encoder, (const AVCodecParameters*) codecParams))) {
       NAPI_THROW_ERROR(avErrorMsg("Failed to set encoder parameters from provided params: ", ret));
     }
     // printf("Params to context result: %i\n", ret);
@@ -138,7 +138,7 @@ create:
       (encoder->sample_rate > 0) && (encoder->channel_layout != 0)) {
     // For audio encodes open the encoder if sufficient parameters have been provided
     // Encoder specific parameters will then be set up and available before the first encode
-    ret = ffmpeg_static_avcodec_open2(encoder, encoder->codec, nullptr);
+    ret = avcodec_open2(encoder, encoder->codec, nullptr);
     if (ret) {
       NAPI_THROW_ERROR(avErrorMsg("Failed to open audio encoder: ", ret));
     }
@@ -148,16 +148,16 @@ create:
 
 bail:
   if (encoder != nullptr) {
-    ffmpeg_static_avcodec_close(encoder);
-    ffmpeg_static_avcodec_free_context(&encoder);
+    avcodec_close(encoder);
+    avcodec_free_context(&encoder);
   }
   return nullptr;
 };
 
 void encoderFinalizer(napi_env env, void* data, void* hint) {
   AVCodecContext* encoder = (AVCodecContext*) data;
-  ffmpeg_static_avcodec_close(encoder);
-  ffmpeg_static_avcodec_free_context(&encoder);
+  avcodec_close(encoder);
+  avcodec_free_context(&encoder);
 };
 
 void encodeExecute(napi_env env, void* data) {
@@ -168,12 +168,12 @@ void encodeExecute(napi_env env, void* data) {
 
   for ( auto it = c->frames.cbegin() ; it != c->frames.cend() ; it++ ) {
   bump:
-   ret = ffmpeg_static_avcodec_send_frame(c->encoder, *it);
+   ret = avcodec_send_frame(c->encoder, *it);
    switch (ret) {
      case AVERROR(EAGAIN):
-       //printf("Input is not accepted in the current state - user must read output with ffmpeg_static_avcodec_receive_frame().\n");
-       packet = ffmpeg_static_av_packet_alloc();
-       ffmpeg_static_avcodec_receive_packet(c->encoder, packet);
+       //printf("Input is not accepted in the current state - user must read output with avcodec_receive_frame().\n");
+       packet = av_packet_alloc();
+       avcodec_receive_packet(c->encoder, packet);
        c->packets.push_back(packet);
        goto bump;
      case AVERROR_EOF:
@@ -181,7 +181,7 @@ void encodeExecute(napi_env env, void* data) {
        c->errorMsg = "The encoder has been flushed, and no new frames can be sent to it.";
        return;
      case AVERROR(EINVAL):
-       if ((ret = ffmpeg_static_avcodec_open2(c->encoder, c->encoder->codec, nullptr))) {
+       if ((ret = avcodec_open2(c->encoder, c->encoder->codec, nullptr))) {
          c->status = BEAMCODER_ERROR_ALLOC_ENCODER;
          c->errorMsg = avErrorMsg("Problem opening encoder: ", ret);
          return;
@@ -202,16 +202,16 @@ void encodeExecute(napi_env env, void* data) {
   } // loop through input frames
 
   do {
-    packet = ffmpeg_static_av_packet_alloc();
-    ret = ffmpeg_static_avcodec_receive_packet(c->encoder, packet);
+    packet = av_packet_alloc();
+    ret = avcodec_receive_packet(c->encoder, packet);
     if (ret == 0) {
       c->packets.push_back(packet);
-      packet = ffmpeg_static_av_packet_alloc();
+      packet = av_packet_alloc();
     } else {
       //printf("Receive packet got status %i\n", ret);
     }
   } while (ret == 0);
-  ffmpeg_static_av_packet_free(&packet);
+  av_packet_free(&packet);
 
   c->totalTime = microTime(encodeStart);
   /* if (!c->frames.empty()) {

@@ -119,14 +119,14 @@ napi_value muxer(napi_env env, napi_callback_info info) {
     }
   }
 
-  AVIOContext* ffmpeg_static_avio_ctx = nullptr;
+  AVIOContext* avio_ctx = nullptr;
   if (adaptor) {
-    ffmpeg_static_avio_ctx = ffmpeg_static_avio_alloc_context(adaptor->buf(), adaptor->bufLen(), 1, adaptor, nullptr, &write_packet, nullptr);
-    if (!ffmpeg_static_avio_ctx) {
+    avio_ctx = avio_alloc_context(adaptor->buf(), adaptor->bufLen(), 1, adaptor, nullptr, &write_packet, nullptr);
+    if (!avio_ctx) {
       NAPI_THROW_ERROR("Problem allocating muxer stream output context.");
     }
   }
-  ret = ffmpeg_static_avformat_alloc_output_context2(&fmtCtx, oformat, formatName, filename);
+  ret = avformat_alloc_output_context2(&fmtCtx, oformat, formatName, filename);
 
   free(formatName);
   free(filename);
@@ -135,7 +135,7 @@ napi_value muxer(napi_env env, napi_callback_info info) {
     NAPI_THROW_ERROR(avErrorMsg("Error allocating muxer context: ", ret));
   }
 
-  fmtCtx->pb = ffmpeg_static_avio_ctx;
+  fmtCtx->pb = avio_ctx;
 
   status = fromAVFormatContext(env, fmtCtx, adaptor, &result);
   CHECK_STATUS;
@@ -183,7 +183,7 @@ void openIOExecute(napi_env env, void* data) {
   openIOCarrier* c = (openIOCarrier*) data;
   int ret;
   if (c->format->pb == nullptr) {
-    ret = ffmpeg_static_avio_open2(&c->format->pb, c->format->url, c->flags, nullptr, &c->options);
+    ret = avio_open2(&c->format->pb, c->format->url, c->flags, nullptr, &c->options);
     if (ret < 0) {
       c->status = BEAMCODER_ERROR_OPENIO;
       c->errorMsg = avErrorMsg("Problem opening IO context: ", ret);
@@ -209,7 +209,7 @@ void openIOComplete(napi_env env, napi_status asyncStatus, void* data) {
     REJECT_STATUS;
     c->status = napi_set_named_property(env, result, "unset", unset);
     REJECT_STATUS;
-    while ((tag = ffmpeg_static_av_dict_get(c->options, "", tag, AV_DICT_IGNORE_SUFFIX))) {
+    while ((tag = av_dict_get(c->options, "", tag, AV_DICT_IGNORE_SUFFIX))) {
       c->status = beam_set_string_utf8(env, unset, tag->key, tag->value);
       REJECT_STATUS;
     }
@@ -264,7 +264,7 @@ napi_value openIO(napi_env env, napi_callback_info info) {
     if (type == napi_string) {
       c->status = napi_get_value_string_utf8(env, prop, nullptr, 0, &strLen);
       REJECT_RETURN;
-      c->format->url = (char*) ffmpeg_static_av_malloc(sizeof(char) * (strLen + 1));
+      c->format->url = (char*) av_malloc(sizeof(char) * (strLen + 1));
       c->status = napi_get_value_string_utf8(env, prop, c->format->url, strLen + 1, &strLen);
       REJECT_RETURN;
     }
@@ -276,7 +276,7 @@ napi_value openIO(napi_env env, napi_callback_info info) {
     if (type == napi_string) {
       c->status = napi_get_value_string_utf8(env, prop, nullptr, 0, &strLen);
       REJECT_RETURN;
-      c->format->url = (char*) ffmpeg_static_av_malloc(sizeof(char) * (strLen + 1));
+      c->format->url = (char*) av_malloc(sizeof(char) * (strLen + 1));
       c->status = napi_get_value_string_utf8(env, prop, c->format->url, strLen + 1, &strLen);
       REJECT_RETURN;
     }
@@ -341,7 +341,7 @@ napi_value openIO(napi_env env, napi_callback_info info) {
 void writeHeaderExecute(napi_env env, void* data) {
   writeHeaderCarrier* c = (writeHeaderCarrier*) data;
 
-  c->result = ffmpeg_static_avformat_write_header(c->format, &c->options);
+  c->result = avformat_write_header(c->format, &c->options);
   if (c->result < 0) {
     c->status = BEAMCODER_ERROR_WRITE_HEADER;
     c->errorMsg = avErrorMsg("Failed to write header: ", c->result);
@@ -375,7 +375,7 @@ void writeHeaderComplete(napi_env env, napi_status asyncStatus, void* data) {
     REJECT_STATUS;
     c->status = napi_set_named_property(env, result, "unset", unset);
     REJECT_STATUS;
-    while ((tag = ffmpeg_static_av_dict_get(c->options, "", tag, AV_DICT_IGNORE_SUFFIX))) {
+    while ((tag = av_dict_get(c->options, "", tag, AV_DICT_IGNORE_SUFFIX))) {
       c->status = beam_set_string_utf8(env, unset, tag->key, tag->value);
       REJECT_STATUS;
     }
@@ -446,7 +446,7 @@ napi_value writeHeader(napi_env env, napi_callback_info info) {
 void initOutputExecute(napi_env env, void* data) {
   initOutputCarrier* c = (initOutputCarrier*) data;
 
-  c->result = ffmpeg_static_avformat_init_output(c->format, &c->options);
+  c->result = avformat_init_output(c->format, &c->options);
   if (c->result < 0) {
     c->status = BEAMCODER_ERROR_INIT_OUTPUT;
     c->errorMsg = avErrorMsg("Failed to initialize output: ", c->result);
@@ -480,7 +480,7 @@ void initOutputComplete(napi_env env, napi_status asyncStatus, void* data) {
     REJECT_STATUS;
     c->status = napi_set_named_property(env, result, "unset", unset);
     REJECT_STATUS;
-    while ((tag = ffmpeg_static_av_dict_get(c->options, "", tag, AV_DICT_IGNORE_SUFFIX))) {
+    while ((tag = av_dict_get(c->options, "", tag, AV_DICT_IGNORE_SUFFIX))) {
       c->status = beam_set_string_utf8(env, unset, tag->key, tag->value);
       REJECT_STATUS;
     }
@@ -554,19 +554,19 @@ void writeFrameExecute(napi_env env, void* data) {
 
   if (c->interleaved) {
     if (c->packet != nullptr) {
-      ret = ffmpeg_static_av_interleaved_write_frame(c->format, c->packet);
+      ret = av_interleaved_write_frame(c->format, c->packet);
     } else if (c->frame != nullptr) {
-      ret = ffmpeg_static_av_interleaved_write_uncoded_frame(c->format, c->streamIndex, c->frame);
+      ret = av_interleaved_write_uncoded_frame(c->format, c->streamIndex, c->frame);
     } else {
-      ret = ffmpeg_static_av_interleaved_write_frame(c->format, nullptr); // flush
+      ret = av_interleaved_write_frame(c->format, nullptr); // flush
     }
   } else {
     if (c->packet != nullptr) {
-      ret = ffmpeg_static_av_write_frame(c->format, c->packet);
+      ret = av_write_frame(c->format, c->packet);
     } else if (c->frame != nullptr) {
-      ret = ffmpeg_static_av_write_uncoded_frame(c->format, c->streamIndex, c->frame);
+      ret = av_write_uncoded_frame(c->format, c->streamIndex, c->frame);
     } else {
-      ret = ffmpeg_static_av_write_frame(c->format, nullptr); // flush
+      ret = av_write_frame(c->format, nullptr); // flush
     }
   }
 
@@ -660,8 +660,8 @@ napi_value writeFrame(napi_env env, napi_callback_info info) {
     if (type == napi_external) {
       c->status = napi_get_value_external(env, prop, (void**) &packetData);
       REJECT_RETURN;
-      c->packet = ffmpeg_static_av_packet_alloc();
-      if ((ret = ffmpeg_static_av_packet_ref(c->packet, const_cast<AVPacket*>(packetData->packet)))) {
+      c->packet = av_packet_alloc();
+      if ((ret = av_packet_ref(c->packet, const_cast<AVPacket*>(packetData->packet)))) {
         REJECT_ERROR_RETURN(avErrorMsg("Failed to reference packet: ", ret),
           BEAMCODER_ERROR_ENOMEM);
       };
@@ -681,8 +681,8 @@ napi_value writeFrame(napi_env env, napi_callback_info info) {
     if (type == napi_external) {
       c->status = napi_get_value_external(env, prop, (void**) &frameData);
       REJECT_RETURN;
-      c->frame = ffmpeg_static_av_frame_alloc();
-      if ((ret = ffmpeg_static_av_frame_ref(c->frame, const_cast<AVFrame*>(frameData->frame)))) {
+      c->frame = av_frame_alloc();
+      if ((ret = av_frame_ref(c->frame, const_cast<AVFrame*>(frameData->frame)))) {
         REJECT_ERROR_RETURN(avErrorMsg("Failed to reference frame: ", ret),
           BEAMCODER_ERROR_ENOMEM);
       };
@@ -728,14 +728,14 @@ void writeTrailerExecute(napi_env env, void* data) {
   writeTrailerCarrier* c = (writeTrailerCarrier*) data;
   int retWrite = 0, retClose = 0;
 
-  retWrite = ffmpeg_static_av_write_trailer(c->format);
+  retWrite = av_write_trailer(c->format);
   if (c->format->pb != nullptr) {
     if (c->adaptor) {
       c->adaptor->finish();
-      ffmpeg_static_avio_context_free(&c->format->pb);
+      avio_context_free(&c->format->pb);
     }
     else
-      retClose = ffmpeg_static_avio_closep(&c->format->pb);
+      retClose = avio_closep(&c->format->pb);
   }
   if ((retWrite < 0) && (retClose < 0)) {
     c->status = BEAMCODER_ERROR_WRITE_TRAILER;
@@ -819,7 +819,7 @@ napi_value forceClose(napi_env env, napi_callback_info info) {
   CHECK_STATUS;
 
   if (format->pb != nullptr) {
-    ret = ffmpeg_static_avio_closep(&format->pb);
+    ret = avio_closep(&format->pb);
     if (ret < 0) {
       NAPI_THROW_ERROR(avErrorMsg("Failed to force close muxer resource: ", ret));
     }
