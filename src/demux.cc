@@ -54,30 +54,7 @@ void demuxerExecute(napi_env env, void* data) {
 
   if ((ret = avformat_open_input(&c->format, c->filename, c->iformat, &c->options))) {
     c->status = BEAMCODER_ERROR_START;
-    char err[10000] = " Problem opening input format. filename: ";
-    strcat(err, c->filename);
-    if (c->iformat != nullptr && c->iformat->long_name != nullptr) {
-      strcat(err, " iformat: ");
-      strcat(err, c->iformat->long_name);
-    }
-    if (c->format != nullptr && c->format->codec_whitelist != nullptr) {
-      strcat(err, " codec whitelist: ");
-      strcat(err, c->format->codec_whitelist);
-    }
-    if (c->format != nullptr && c->format->format_whitelist != nullptr) {
-      strcat(err, " format whitelist: ");
-      strcat(err, c->format->format_whitelist);
-    }
-    if (c->format != nullptr && c->format->protocol_whitelist != nullptr) {
-      strcat(err, " protocol whitelist: ");
-      strcat(err, c->format->protocol_whitelist);
-    }
-    if (c->format != nullptr && c->format->protocol_blacklist != nullptr) {
-      strcat(err, " protocol blacklist: ");
-      strcat(err, c->format->protocol_blacklist);
-    }
-    strcat(err, " \0");
-    c->errorMsg = avErrorMsg(err, ret);
+    c->errorMsg = avErrorMsg("Problem opening input format: ", ret);
     return;
   }
 
