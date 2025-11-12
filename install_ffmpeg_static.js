@@ -28,9 +28,6 @@ const path = require('path');
 const [ mkdir, access, rename, execFile, exec ] = // eslint-disable-line
   [ fs.mkdir, fs.access, fs.rename, cp.execFile, cp.exec ].map(util.promisify);
 
-// FFmpeg version to use (matching the version used in install_ffmpeg.js)
-const FFMPEG_VERSION = '5.1.4';
-
 // GitHub repository with pre-built static libraries
 const GITHUB_REPO = 'Lumen5/ffmpeg-static';
 const GITHUB_BRANCH = 'main';
