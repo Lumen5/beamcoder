@@ -124,7 +124,9 @@
           "-framework CoreVideo",
           "-framework CoreFoundation",
           "-framework Security",
-          "-framework AudioToolbox"
+          "-framework AudioToolbox",
+          "-exported_symbols_list",
+          "<(module_root_dir)/exports.txt"
         ]
       }
     }],
