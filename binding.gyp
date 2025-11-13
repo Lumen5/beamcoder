@@ -9,6 +9,9 @@
                   "src/packet.cc", "src/frame.cc",
                   "src/codec_par.cc", "src/format.cc",
                   "src/codec.cc", "src/hwcontext.cc"],
+    "variables": {
+      "ffmpeg_static%": "<!(echo ${FFMPEG_STATIC:-1})"
+    },
     "conditions": [
       ['OS!="win"', {
         "defines": [
@@ -20,10 +23,12 @@
         ],
         "cflags_cc": [
           "-std=c++11",
-          "-fexceptions"
+          "-fexceptions",
+          "-fPIC",
+          "-fvisibility=hidden"
         ]
       }],
-      ['OS!="win" and OS!="linux"', {
+      ['OS!="win" and OS!="linux" and ffmpeg_static==0', {
         "link_settings": {
           "libraries": [
             "-lavcodec",
@@ -76,7 +81,57 @@
             }
           ]
     }],
-    ['OS=="linux"', {
+    ['OS=="mac" and ffmpeg_static==0', {
+      "include_dirs" : [
+        "/usr/local/Cellar/ffmpeg@5/5.1.3/include/",
+        "/opt/homebrew/Cellar/ffmpeg@5/5.1.3/include/",
+        "/opt/homebrew/Cellar/ffmpeg@5/5.1.4_4/include/",
+      ],
+      "library_dirs": [
+        "/usr/local/Cellar/ffmpeg@5/5.1.3/lib/",
+        "/opt/homebrew/Cellar/ffmpeg@5/5.1.3/lib/",
+        "/opt/homebrew/Cellar/ffmpeg@5/5.1.4_4/lib/",
+      ]
+    }],
+    ['OS=="mac" and ffmpeg_static==1', {
+      "include_dirs": [
+        "ffmpeg/ffmpeg-static-build/include"
+      ],
+      "libraries": [
+        "../ffmpeg/ffmpeg-static-build/lib/libavcodec.a",
+        "../ffmpeg/ffmpeg-static-build/lib/libavdevice.a",
+        "../ffmpeg/ffmpeg-static-build/lib/libavfilter.a",
+        "../ffmpeg/ffmpeg-static-build/lib/libavformat.a",
+        "../ffmpeg/ffmpeg-static-build/lib/libavutil.a",
+        "../ffmpeg/ffmpeg-static-build/lib/libpostproc.a",
+        "../ffmpeg/ffmpeg-static-build/lib/libswresample.a",
+        "../ffmpeg/ffmpeg-static-build/lib/libswscale.a",
+        "-framework VideoToolbox",
+        "-framework CoreMedia",
+        "-framework CoreVideo",
+        "-framework CoreFoundation",
+        "-framework Security",
+        "-framework AudioToolbox",
+        "-lvpx",
+        "-lbz2",
+        "-lz",
+        "-liconv",
+        "-lm"
+      ],
+      "xcode_settings": {
+        "OTHER_LDFLAGS": [
+          "-framework VideoToolbox",
+          "-framework CoreMedia",
+          "-framework CoreVideo",
+          "-framework CoreFoundation",
+          "-framework Security",
+          "-framework AudioToolbox",
+          "-exported_symbols_list",
+          "<(module_root_dir)/exports.txt"
+        ]
+      }
+    }],
+    ['OS=="linux" and ffmpeg_static==0', {
       "libraries": [
         "<!(pkg-config --libs libavcodec)",
         "<!(pkg-config --libs libavdevice)",
@@ -88,16 +143,27 @@
         "<!(pkg-config --libs libswscale)"
       ]
     }],
-    ['OS=="mac"', {
-      "include_dirs" : [
-        "/usr/local/Cellar/ffmpeg@5/5.1.3/include/",
-        "/opt/homebrew/Cellar/ffmpeg@5/5.1.3/include/",
-        "/opt/homebrew/Cellar/ffmpeg@5/5.1.4_4/include/",
+    ['OS=="linux" and ffmpeg_static==1', {
+      "include_dirs": [
+        "ffmpeg/ffmpeg-static-build/include"
       ],
-      "library_dirs": [
-        "/usr/local/Cellar/ffmpeg@5/5.1.3/lib/",
-        "/opt/homebrew/Cellar/ffmpeg@5/5.1.3/lib/",
-        "/opt/homebrew/Cellar/ffmpeg@5/5.1.4_4/lib/",
+      "libraries": [
+        "../ffmpeg/ffmpeg-static-build/lib/libavcodec.a",
+        "../ffmpeg/ffmpeg-static-build/lib/libavdevice.a",
+        "../ffmpeg/ffmpeg-static-build/lib/libavfilter.a",
+        "../ffmpeg/ffmpeg-static-build/lib/libavformat.a",
+        "../ffmpeg/ffmpeg-static-build/lib/libavutil.a",
+        "../ffmpeg/ffmpeg-static-build/lib/libpostproc.a",
+        "../ffmpeg/ffmpeg-static-build/lib/libswresample.a",
+        "../ffmpeg/ffmpeg-static-build/lib/libswscale.a",
+        "-lvpx",
+        "-lz",
+        "-lm",
+        "-lpthread",
+        "-ldl"
+      ],
+      "ldflags": [
+        "-Wl,--version-script=<(module_root_dir)/exports.map"
       ]
     }],
   ]
