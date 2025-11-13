@@ -21,6 +21,7 @@ jobs:
           registry-url: https://registry.npmjs.org/
       - run: mkdir /tmp/beamcoder
       - run: cp -r . /tmp/beamcoder
+      - run: sudo apt-get update && sudo apt-get install -y libvpx-dev
       - run: sudo ./scripts/install_beamcoder_dependencies.sh
         working-directory: /tmp/beamcoder
       - run: yarn install --frozen-lockfile

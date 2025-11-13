@@ -97,6 +97,10 @@
       "include_dirs": [
         "ffmpeg/ffmpeg-static-build/include"
       ],
+      "library_dirs": [
+        "/opt/homebrew/lib",
+        "/usr/local/lib"
+      ],
       "libraries": [
         "../ffmpeg/ffmpeg-static-build/lib/libavcodec.a",
         "../ffmpeg/ffmpeg-static-build/lib/libavdevice.a",
