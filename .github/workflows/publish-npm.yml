@@ -35,7 +35,7 @@ jobs:
         working-directory: /tmp/beamcoder
         run: |
           sudo ./scripts/install_beamcoder_dependencies.sh
-          npm ci
+          yarn install --frozen-lockfile
 
       - name: Build and upload prebuilt binary
         working-directory: /tmp/beamcoder
@@ -54,7 +54,7 @@ jobs:
         with:
           node-version: 20
           registry-url: https://registry.npmjs.org/
-      - run: npm ci
-      - run: npm publish
+      - run: yarn install --frozen-lockfile
+      - run: yarn publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}

@@ -36,7 +36,7 @@ jobs:
         working-directory: /tmp/beamcoder
         run: |
           sudo ./scripts/install_beamcoder_dependencies.sh
-          npm ci
+          yarn install --frozen-lockfile
 
       - name: Build prebuilt binary
         working-directory: /tmp/beamcoder
@@ -53,5 +53,5 @@ jobs:
         working-directory: /tmp/beamcoder
         run: |
           rm -rf node_modules build
-          npm ci
-          npm test
+          yarn install --frozen-lockfile
+          yarn test
