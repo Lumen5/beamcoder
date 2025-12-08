@@ -5,11 +5,11 @@
   "main": "index.js",
   "types": "index.d.ts",
   "scripts": {
-    "preinstall": "node install_ffmpeg_static.js",
-    "install": "FFMPEG_STATIC=1 node-gyp rebuild",
+    "install": "prebuild-install || (node install_ffmpeg_static.js && FFMPEG_STATIC=1 node-gyp rebuild)",
     "preinstall:dynamic": "node install_ffmpeg.js",
     "install:dynamic": "FFMPEG_STATIC=0 node-gyp rebuild",
     "build:dynamic": "npm run preinstall:dynamic && npm run install:dynamic",
+    "prebuild": "node install_ffmpeg_static.js && FFMPEG_STATIC=1 prebuild",
     "test": "tape test/*.js",
     "lint": "eslint **/*.js",
     "lint-html": "eslint **/*.js -f html -o ./reports/lint-results.html",
@@ -37,11 +37,13 @@
   },
   "homepage": "https://github.com/Streampunk/beamcoder#readme",
   "dependencies": {
-    "bindings": "^1.5.0"
+    "bindings": "^1.5.0",
+    "prebuild-install": "^7.1.2"
   },
   "devDependencies": {
     "eslint": "^8.9.0",
-    "tape": "^5.5.2"
+    "tape": "^5.5.2",
+    "prebuild": "^13.0.1"
   },
   "gypfile": true
 }
