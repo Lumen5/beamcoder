@@ -1,5 +1,5 @@
-# Build and upload prebuilt binaries for faster npm install
-name: Prebuild Binaries
+# Build prebuilt binaries and publish to npm
+name: Build & Publish
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  prebuild-linux:
+  build:
     runs-on: ubuntu-latest
     env:
       CPATH: /tmp/beamcoder/.ffmpeg/ffmpeg/include/
@@ -20,6 +20,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 22
+          registry-url: https://registry.npmjs.org/
 
       - name: Get package version
         id: version
@@ -38,8 +39,8 @@ jobs:
         run: sudo ./scripts/install_beamcoder_dependencies.sh
         working-directory: /tmp/beamcoder
 
-      - name: Install npm dependencies (skip native build)
-        run: npm install --ignore-scripts
+      - name: Install dependencies (skip native build)
+        run: yarn install --frozen-lockfile --ignore-scripts
         working-directory: /tmp/beamcoder
 
       - name: Download FFmpeg static libraries
@@ -56,7 +57,7 @@ jobs:
         run: find /tmp/beamcoder/prebuilds -name "*.tar.gz" -ls
 
       - name: Create or update release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main'
         run: |
           VERSION="v${{ steps.version.outputs.version }}"
           # Check if release exists
@@ -70,3 +71,15 @@ jobs:
           find /tmp/beamcoder/prebuilds -name "*.tar.gz" -exec gh release upload "$VERSION" {} --clobber \;
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build for npm publish
+        if: github.ref == 'refs/heads/main'
+        run: FFMPEG_STATIC=1 node-gyp rebuild
+        working-directory: /tmp/beamcoder
+
+      - name: Publish to npm
+        if: github.ref == 'refs/heads/main'
+        run: yarn publish
+        working-directory: /tmp/beamcoder
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
