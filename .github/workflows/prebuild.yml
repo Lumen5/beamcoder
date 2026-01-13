@@ -79,7 +79,7 @@ jobs:
 
       - name: Publish to npm
         # if: github.ref == 'refs/heads/main'
-        run: yarn publish
+        run: yarn publish --access public
         working-directory: /tmp/beamcoder
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
