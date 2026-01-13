@@ -77,9 +77,16 @@ jobs:
         run: FFMPEG_STATIC=1 npx node-gyp rebuild
         working-directory: /tmp/beamcoder
 
+      - name: Check npm auth
+        run: |
+          cat ~/.npmrc || true
+          npm whoami
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
+
       - name: Publish to npm
         # if: github.ref == 'refs/heads/main'
-        run: yarn publish --access public
+        run: npm publish
         working-directory: /tmp/beamcoder
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
