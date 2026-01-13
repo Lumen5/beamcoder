@@ -3,7 +3,7 @@ name: Build & Publish
 
 on:
   push:
-    branches: [main]
+    # branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -57,7 +57,7 @@ jobs:
         run: find /tmp/beamcoder/prebuilds -name "*.tar.gz" -ls
 
       - name: Create or update release
-        if: github.ref == 'refs/heads/main'
+        # if: github.ref == 'refs/heads/main'
         run: |
           VERSION="v${{ steps.version.outputs.version }}"
           # Check if release exists
@@ -73,12 +73,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build for npm publish
-        if: github.ref == 'refs/heads/main'
+        # if: github.ref == 'refs/heads/main'
         run: FFMPEG_STATIC=1 node-gyp rebuild
         working-directory: /tmp/beamcoder
 
       - name: Publish to npm
-        if: github.ref == 'refs/heads/main'
+        # if: github.ref == 'refs/heads/main'
         run: yarn publish
         working-directory: /tmp/beamcoder
         env:
