@@ -102,6 +102,14 @@
         "/usr/local/lib"
       ],
       "libraries": [
+        "../ffmpeg/ffmpeg-static-build/lib/libavcodec.a",
+        "../ffmpeg/ffmpeg-static-build/lib/libavdevice.a",
+        "../ffmpeg/ffmpeg-static-build/lib/libavfilter.a",
+        "../ffmpeg/ffmpeg-static-build/lib/libavformat.a",
+        "../ffmpeg/ffmpeg-static-build/lib/libavutil.a",
+        "../ffmpeg/ffmpeg-static-build/lib/libpostproc.a",
+        "../ffmpeg/ffmpeg-static-build/lib/libswresample.a",
+        "../ffmpeg/ffmpeg-static-build/lib/libswscale.a",
         "-framework VideoToolbox",
         "-framework CoreMedia",
         "-framework CoreVideo",
@@ -116,14 +124,7 @@
       ],
       "xcode_settings": {
         "OTHER_LDFLAGS": [
-          "-Wl,-force_load,<(module_root_dir)/ffmpeg/ffmpeg-static-build/lib/libavcodec.a",
-          "-Wl,-force_load,<(module_root_dir)/ffmpeg/ffmpeg-static-build/lib/libavdevice.a",
-          "-Wl,-force_load,<(module_root_dir)/ffmpeg/ffmpeg-static-build/lib/libavfilter.a",
-          "-Wl,-force_load,<(module_root_dir)/ffmpeg/ffmpeg-static-build/lib/libavformat.a",
-          "-Wl,-force_load,<(module_root_dir)/ffmpeg/ffmpeg-static-build/lib/libavutil.a",
-          "-Wl,-force_load,<(module_root_dir)/ffmpeg/ffmpeg-static-build/lib/libpostproc.a",
-          "-Wl,-force_load,<(module_root_dir)/ffmpeg/ffmpeg-static-build/lib/libswresample.a",
-          "-Wl,-force_load,<(module_root_dir)/ffmpeg/ffmpeg-static-build/lib/libswscale.a",
+          "-all_load",
           "-framework VideoToolbox",
           "-framework CoreMedia",
           "-framework CoreVideo",
