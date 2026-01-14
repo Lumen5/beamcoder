@@ -1,6 +1,6 @@
 {
   "name": "@lumen5/beamcoder",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "description": "Node.js native bindings to FFmpeg.",
   "main": "index.js",
   "types": "index.d.ts",
