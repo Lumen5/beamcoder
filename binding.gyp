@@ -169,7 +169,7 @@
         "../ffmpeg/ffmpeg-static-build/lib/libpostproc.a",
         "../ffmpeg/ffmpeg-static-build/lib/libswresample.a",
         "../ffmpeg/ffmpeg-static-build/lib/libswscale.a",
-        "-lvpx",
+        "-l:libvpx.a",
         "-lz",
         "-lm",
         "-lpthread",
