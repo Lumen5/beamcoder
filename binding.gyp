@@ -110,10 +110,15 @@
         "../ffmpeg/ffmpeg-static-build/lib/libpostproc.a",
         "../ffmpeg/ffmpeg-static-build/lib/libswresample.a",
         "../ffmpeg/ffmpeg-static-build/lib/libswscale.a",
+        "-framework AVFoundation",
         "-framework VideoToolbox",
         "-framework CoreMedia",
         "-framework CoreVideo",
         "-framework CoreFoundation",
+        "-framework CoreGraphics",
+        "-framework CoreImage",
+        "-framework AppKit",
+        "-framework OpenGL",
         "-framework Security",
         "-framework AudioToolbox",
         "/opt/homebrew/lib/libvpx.a",
@@ -125,10 +130,15 @@
       "xcode_settings": {
         "OTHER_LDFLAGS": [
           "-all_load",
+          "-framework AVFoundation",
           "-framework VideoToolbox",
           "-framework CoreMedia",
           "-framework CoreVideo",
           "-framework CoreFoundation",
+          "-framework CoreGraphics",
+          "-framework CoreImage",
+          "-framework AppKit",
+          "-framework OpenGL",
           "-framework Security",
           "-framework AudioToolbox"
         ]
