@@ -9,11 +9,57 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  prebuild:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: macos-14
+            platform: darwin
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 22
+
+      - name: Get package version
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Install system dependencies (Linux)
+        if: matrix.platform == 'linux'
+        run: sudo apt-get update && sudo apt-get install -y libvpx-dev
+
+      - name: Install system dependencies (macOS)
+        if: matrix.platform == 'darwin'
+        run: brew install libvpx
+
+      - name: Install dependencies (skip native build)
+        run: yarn install --frozen-lockfile --ignore-scripts
+
+      - name: Download FFmpeg static libraries
+        run: node install_ffmpeg_static.js
+
+      - name: Build prebuild
+        run: npx prebuild --strip -r node -t 22.0.0
+        env:
+          FFMPEG_STATIC: "1"
+
+      - name: List prebuilds
+        run: find prebuilds -name "*.tar.gz" -ls
+
+      - name: Upload prebuild artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: prebuild-${{ matrix.platform }}
+          path: prebuilds/**/*.tar.gz
+
+  release:
+    needs: prebuild
     runs-on: ubuntu-latest
-    env:
-      CPATH: /tmp/beamcoder/.ffmpeg/ffmpeg/include/
-      PKG_CONFIG_PATH: /tmp/beamcoder/.ffmpeg/ffmpeg/lib/pkgconfig/
     steps:
       - uses: actions/checkout@v3
 
@@ -26,35 +72,15 @@ jobs:
         id: version
         run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
-      - name: Create working directory
-        run: mkdir /tmp/beamcoder
+      - name: Download all prebuild artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: prebuilds
+          pattern: prebuild-*
+          merge-multiple: true
 
-      - name: Copy source
-        run: cp -r . /tmp/beamcoder
-
-      - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y libvpx-dev
-
-      - name: Install FFmpeg dependencies
-        run: sudo ./scripts/install_beamcoder_dependencies.sh
-        working-directory: /tmp/beamcoder
-
-      - name: Install dependencies (skip native build)
-        run: yarn install --frozen-lockfile --ignore-scripts
-        working-directory: /tmp/beamcoder
-
-      - name: Download FFmpeg static libraries
-        run: node install_ffmpeg_static.js
-        working-directory: /tmp/beamcoder
-
-      - name: Build prebuild
-        run: npx prebuild --strip -r node -t 22.0.0
-        working-directory: /tmp/beamcoder
-        env:
-          FFMPEG_STATIC: "1"
-
-      - name: List prebuilds
-        run: find /tmp/beamcoder/prebuilds -name "*.tar.gz" -ls
+      - name: List all prebuilds
+        run: find prebuilds -name "*.tar.gz" -ls
 
       - name: Create or update release
         # if: github.ref == 'refs/heads/main'
@@ -67,19 +93,26 @@ jobs:
             echo "Creating release $VERSION..."
             gh release create "$VERSION" --title "$VERSION" --notes "Prebuilt binaries for version $VERSION"
           fi
-          # Upload prebuilds (handle scoped package subdirectory)
-          find /tmp/beamcoder/prebuilds -name "*.tar.gz" -exec gh release upload "$VERSION" {} --clobber \;
+          # Upload prebuilds
+          find prebuilds -name "*.tar.gz" -exec gh release upload "$VERSION" {} --clobber \;
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libvpx-dev
+
+      - name: Install dependencies (skip native build)
+        run: yarn install --frozen-lockfile --ignore-scripts
+
+      - name: Download FFmpeg static libraries
+        run: node install_ffmpeg_static.js
 
       - name: Build for npm publish
         # if: github.ref == 'refs/heads/main'
         run: FFMPEG_STATIC=1 npx node-gyp rebuild
-        working-directory: /tmp/beamcoder
 
       - name: Publish to npm
         # if: github.ref == 'refs/heads/main'
         run: npm publish
-        working-directory: /tmp/beamcoder
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
