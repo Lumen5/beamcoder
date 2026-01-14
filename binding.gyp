@@ -116,7 +116,7 @@
         "-framework CoreFoundation",
         "-framework Security",
         "-framework AudioToolbox",
-        "-lvpx",
+        "/opt/homebrew/lib/libvpx.a",
         "-lbz2",
         "-lz",
         "-liconv",
