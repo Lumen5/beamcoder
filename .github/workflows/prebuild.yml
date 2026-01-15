@@ -52,7 +52,7 @@ jobs:
           name: prebuild-${{ matrix.platform }}
           path: prebuilds/**/*.tar.gz
 
-  release:
+  build-and-release:
     needs: prebuild
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
