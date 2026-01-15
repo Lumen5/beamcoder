@@ -1,0 +1,22 @@
+# Prebuilds are downloaded from GitHub releases, not bundled in npm
+prebuilds/
+
+# Build artifacts
+build/
+
+# FFmpeg libraries (downloaded at install time)
+ffmpeg/
+
+# Development files
+.circleci/
+.github/
+.claude/
+test/
+scratch/
+examples/
+images/
+*.tgz
+
+# Editor/IDE
+.vscode/
+*.swp

@@ -1,0 +1,50 @@
+name: Build
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  prebuild:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            platform: linux
+          - os: macos-14
+            platform: darwin
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 22
+
+      - name: Install system dependencies (Linux)
+        if: matrix.platform == 'linux'
+        run: sudo apt-get update && sudo apt-get install -y libvpx-dev
+
+      - name: Install system dependencies (macOS)
+        if: matrix.platform == 'darwin'
+        run: brew install libvpx
+
+      - name: Install dependencies (skip native build)
+        run: yarn install --frozen-lockfile --ignore-scripts
+
+      - name: Download FFmpeg static libraries
+        run: node install_ffmpeg_static.js
+
+      - name: Build prebuild
+        run: npx prebuild --strip -r node -t 22.0.0
+        env:
+          FFMPEG_STATIC: "1"
+
+      - name: List prebuilds
+        run: find prebuilds -name "*.tar.gz" -ls
+
+      - name: Upload prebuild artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: prebuild-${{ matrix.platform }}
+          path: prebuilds/**/*.tar.gz
