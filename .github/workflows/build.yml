@@ -11,8 +11,13 @@ jobs:
         include:
           - os: ubuntu-22.04
             platform: linux
+            arch: x64
+          - os: ubuntu-22.04-arm
+            platform: linux
+            arch: arm64
           - os: macos-14
             platform: darwin
+            arch: arm64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
@@ -46,5 +51,5 @@ jobs:
       - name: Upload prebuild artifact
         uses: actions/upload-artifact@v4
         with:
-          name: prebuild-${{ matrix.platform }}
+          name: prebuild-${{ matrix.platform }}-${{ matrix.arch }}
           path: prebuilds/**/*.tar.gz
