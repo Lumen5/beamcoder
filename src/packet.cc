@@ -127,6 +127,7 @@ napi_value getPacketData(napi_env env, napi_callback_info info) {
   napi_value result;
   packetData* p;
   AVBufferRef* hintRef;
+  void* resultData;
 
   status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**) &p);
   CHECK_STATUS;
@@ -135,8 +136,7 @@ napi_value getPacketData(napi_env env, napi_callback_info info) {
     status = napi_get_null(env, &result);
   } else {
     hintRef = av_buffer_ref(p->packet->buf);
-    status = napi_create_external_buffer(env, hintRef->size, hintRef->data,
-      packetBufferFinalizer, hintRef, &result);
+    status = napi_create_buffer_copy(env, hintRef->size, hintRef->data, &resultData, &result);
     CHECK_STATUS;
   }
 

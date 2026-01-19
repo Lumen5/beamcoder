@@ -21,6 +21,7 @@
 
 #include "frame.h"
 #include "hwcontext.h"
+#include <libavutil/pixdesc.h>
 
 napi_value getFrameLinesize(napi_env env, napi_callback_info info) {
   napi_status status;
@@ -1051,50 +1052,42 @@ napi_value getFrameData(napi_env env, napi_callback_info info) {
   napi_status status;
   napi_value array, element;
   frameData* f;
-  uint8_t* data;
-  AVBufferRef* ref;
-  size_t size;
-  int curElem;
-
-  status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**) &f);
+  void* resultData;
+  int curElem = 0;
+  status = napi_get_cb_info(env, info, 0, nullptr, nullptr, (void**)&f);
   CHECK_STATUS;
 
   status = napi_create_array(env, &array);
   CHECK_STATUS;
 
-  data = f->frame->data[0];
-  ref = f->frame->buf[0] ? av_buffer_ref(f->frame->buf[0]) : nullptr;
-  size = ref ? ref->size : 0;
-  curElem = 0;
-  // work through frame bufs checking whether allocation refcounts are shared
-  for ( int x = 1 ; x < AV_NUM_DATA_POINTERS ; x++ ) {
-    // printf("Buffer %i is %p\n", x, f->frame->data[x]);
-    if (f->frame->data[x] == nullptr) continue;
-    size_t bufSize = size;
-    if (f->frame->buf[x] == nullptr)
-      bufSize = f->frame->data[x] - f->frame->data[x-1];
-    status = napi_create_external_buffer(env, bufSize, data, frameBufferFinalizer, ref, &element);
-    CHECK_STATUS;
-    status = napi_set_element(env, array, curElem, element);
-    CHECK_STATUS;
-    data = f->frame->data[x];
-    if (f->frame->buf[x]) {
-      ref = av_buffer_ref(f->frame->buf[x]);
-      size = ref->size;
-    } else {
-      ref = nullptr;
-      size -= f->frame->data[x] - f->frame->data[x-1];
+  AVFrame* frame = f->frame;
+  enum AVPixelFormat fmt = (enum AVPixelFormat)frame->format;
+  const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get(fmt);
+  if (!desc) return array; // unknown format
+
+  for (int x = 0; x < AV_NUM_DATA_POINTERS && frame->data[x]; x++) {
+    // Determine the number of rows for this plane
+    int plane_h = frame->height;
+
+    // YUVA420P: Y=full, U/V=half, A=full
+    if (fmt == AV_PIX_FMT_YUVA420P) {
+        if (x == 1 || x == 2) plane_h = (frame->height + 1) / 2;
     }
-    curElem++;
-  }
-  if (data) {
-    status = napi_create_external_buffer(env, size, data, frameBufferFinalizer, ref, &element);
+    // For other planar formats, adjust with chroma subsampling if needed
+    else if (desc->log2_chroma_h && x > 0) {
+        plane_h = (frame->height + (1 << desc->log2_chroma_h) - 1) >> desc->log2_chroma_h;
+    }
+
+    size_t plane_size = frame->linesize[x] * plane_h;
+
+    // Copy exactly plane_size bytes for this plane
+    status = napi_create_buffer_copy(env, plane_size, frame->data[x], &resultData, &element);
     CHECK_STATUS;
-    status = napi_set_element(env, array, curElem, element);
+
+    status = napi_set_element(env, array, curElem++, element);
     CHECK_STATUS;
   }
 
-  CHECK_STATUS;
   return array;
 }
 
