@@ -22,7 +22,10 @@
 const test = require('tape');
 const beamcoder = require('../index.js');
 
-test('Creating a demuxer', async t => {
+// Known failure with static FFmpeg builds: HTTPS protocol requires OpenSSL/GnuTLS
+// which is not included in the static FFmpeg libraries from Lumen5/ffmpeg-static.
+// These tests pass when FFmpeg is dynamically linked with TLS support.
+test('Creating a demuxer', { skip: process.env.FFMPEG_STATIC === '1' }, async t => {
   let dm = await beamcoder.demuxer('https://www.elecard.com/storage/video/bbb_1080p_c.ts');
   t.ok(dm, 'is truthy.');
   t.equal(dm.type, 'demuxer', 'type name says demuxer.');

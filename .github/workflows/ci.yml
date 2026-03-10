@@ -51,3 +51,4 @@ jobs:
         run: npm test
         env:
           UV_THREADPOOL_SIZE: 16
+          FFMPEG_STATIC: "1"
