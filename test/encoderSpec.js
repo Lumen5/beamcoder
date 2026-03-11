@@ -25,7 +25,13 @@ const beamcoder = require('../index.js');
 test('Creating a video encoder', t => {
   let enc = beamcoder.encoder({ name: 'h264' });
   t.ok(enc, 'is truthy.');
-  t.equal(enc.name, 'libx264', 'has the expected name.');
+  // Static FFmpeg builds don't include libx264, so the default h264 encoder
+  // varies by build (e.g. h264_v4l2m2m on Linux). Only assert libx264 for dynamic builds.
+  if (process.env.FFMPEG_STATIC === '1') {
+    t.ok(enc.name, `has an encoder name (${enc.name}).`);
+  } else {
+    t.equal(enc.name, 'libx264', 'has the expected name.');
+  }
   t.equal(enc.codec_id, 27, 'has the expected codec_id.');
   t.ok(typeof enc._CodecContext == 'object', 'external value present.');
   t.equal(enc.type, 'encoder', 'has expected type name.');
