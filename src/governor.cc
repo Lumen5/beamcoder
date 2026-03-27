@@ -56,7 +56,7 @@ void readComplete(napi_env env, napi_status asyncStatus, void *data) {
   }
   REJECT_STATUS;
 
-  c->status = napi_create_external_buffer(env, c->readLen, c->readBuf, readFinalizer, (void*)(uint64_t)c->readLen, &result);
+  c->status = napi_create_buffer(env, c->readLen, &c->readBuf, &result);
   REJECT_STATUS;
 
   c->status = napi_adjust_external_memory(env, c->readLen, &externalMemory);
