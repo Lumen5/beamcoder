@@ -10,6 +10,10 @@ jobs:
   release:
     if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+      actions: read
     steps:
       - uses: actions/checkout@v5
 
@@ -17,6 +21,9 @@ jobs:
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org/
+
+      - name: Update npm for trusted publishing
+        run: npm install -g npm@latest
 
       - name: Get package version
         id: version
@@ -49,5 +56,3 @@ jobs:
 
       - name: Publish to npm
         run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
